@@ -1,12 +1,11 @@
 import discord
-from discord.ext import commands, tasks
-import random
-import requests
-import json
+from discord.ext import commands
+from discord import app_commands
 import os
-from datetime import datetime, timezone, timedelta
-import pytz
 import sys
+import random
+import json
+from datetime import datetime, timedelta
 
 TOKEN = 'token'
 ALLOWED_AUTHOR_ID = 699869229712670780
@@ -14,337 +13,231 @@ ALLOWED_AUTHOR_ID = 699869229712670780
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+bot = commands.Bot(command_prefix='/', intents=intents)
 
-bot.remove_command('help')
+user_balance = {}
+rpg_data = {}
 
-utc_zone = pytz.utc
-now_utc = datetime.now(utc_zone)
-print(now_utc)
-
-BALANCE_FILE = 'user_balance.json'
-COOLDOWN_FILE = 'user_cooldown.json'
+def save_balance(data):
+    with open('balance.json', 'w') as f:
+        json.dump(data, f)
 
 def load_balance():
-    if os.path.exists(BALANCE_FILE):
-        try:
-            with open(BALANCE_FILE, 'r') as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            print("JSON 解码错误: 确保文件格式正确")
-            return {}
-        except Exception as e:
-            print(f"加载余额时发生错误: {e}")
-            return {}
+    if os.path.exists('balance.json'):
+        with open('balance.json', 'r') as f:
+            return json.load(f)
     return {}
 
-def save_balance(balance):
-    try:
-        with open(BALANCE_FILE, 'w') as f:
-            json.dump(balance, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        print(f"保存余额时发生错误: {e}")
+def save_rpg_data(data):
+    with open('rpg_data.json', 'w') as f:
+        json.dump(data, f)
 
-def load_cooldown():
-    if os.path.exists(COOLDOWN_FILE):
-        try:
-            with open(COOLDOWN_FILE, 'r') as f:
-                return json.load(f)
-        except json.JSONDecodeError:
-            print("JSON 解码错误: 确保文件格式正确")
-            return {}
-        except Exception as e:
-            print(f"加载冷却时间时发生错误: {e}")
-            return {}
+def load_rpg_data():
+    if os.path.exists('rpg_data.json'):
+        with open('rpg_data.json', 'r') as f:
+            return json.load(f)
     return {}
-
-def save_cooldown(cooldown):
-    try:
-        with open(COOLDOWN_FILE, 'w') as f:
-            json.dump(cooldown, f, ensure_ascii=False, indent=4)
-    except Exception as e:
-        print(f"保存冷却时间时发生错误: {e}")
 
 user_balance = load_balance()
-user_cooldown = load_cooldown()
+rpg_data = load_rpg_data()
 
 @bot.event
 async def on_ready():
-    print(f'Logged in as {bot.user}')
-    change_game_status.start()
+    print(f'Logged in as {bot.user.name}')
+    await bot.tree.sync()
 
-game_statuses = [
-    '主人正在修復我的代碼中.',
-    '主人正在修復我的代碼中..',
-    '主人正在修復我的代碼中...'
-]
+@bot.tree.command(name="balance", description="查询用户余额")
+async def balance(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    balance = user_balance.get(user_id, 0)
+    await interaction.response.send_message(f'{interaction.user.name} 的比特幣余额: {balance}')
 
-@tasks.loop(seconds=10)
-async def change_game_status():
-    current_status = random.choice(game_statuses)
-    await bot.change_presence(activity=discord.Game(name=current_status))
+@bot.tree.command(name="work", description="赚取比特幣")
+async def work(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    amount = random.randint(5, 20)
+    user_balance[user_id] = user_balance.get(user_id, 0) + amount
+    save_balance(user_balance)
+    await interaction.response.send_message(f'{interaction.user.name} 赚取了 {amount} 比特幣！')
 
-@bot.command(name='help')
-async def custom_help(ctx, command_name: str = None):
-    if command_name:
-        command = bot.get_command(command_name)
-        if command:
-            help_text = f'**{command_name}**\n'
-            if command.description:
-                help_text += f'{command.description}\n'
-            if command.usage:
-                help.text += f'用法{command.usage}\n'
-            await ctx.send(help_text)
-        else:
-            await ctx.send(f'找不到指令`{command_name}`的幫助訊息。')
+@bot.tree.command(name="pay", description="转账给其他用户")
+async def pay(interaction: discord.Interaction, member: discord.Member, amount: int):
+    user_id = str(interaction.user.id)
+    recipient_id = str(member.id)
+    if user_id == recipient_id:
+        await interaction.response.send_message("不能转账给自己")
+        return
+    if user_balance.get(user_id, 0) < amount:
+        await interaction.response.send_message("余额不足")
+        return
+    user_balance[user_id] -= amount
+    user_balance[recipient_id] = user_balance.get(recipient_id, 0) + amount
+    save_balance(user_balance)
+    await interaction.response.send_message(f'{interaction.user.name} 给 {member.name} 转账了 {amount} 比特幣')
+
+@bot.tree.command(name="rpg", description="初始化 RPG 用户数据")
+async def rpg(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    if user_id in rpg_data:
+        await interaction.response.send_message("你已经在 RPG 游戏中！")
     else:
-     help_text = """
-     **可用指令:**
-     > `!help` - 顯示可用指令
-     > `!ping` - 顯示機器人回復延遲
-     > `!memes` - 網絡迷因
-     > `!echo [message]` - 回聲
-     > `!blackjack` - 21點
-     > `!balance` - 查询余额
-     > `!work` - 赚取金钱
-     > `!shutdown` - 关闭机器人 (製作者)
-     > `!restart` - 重启机器人 (製作者)
-     > `!ban` - 封禁特定用戶 (管理員)
-     > `!kick` - 提出用戶 (管理員)
-     """
-     
-    if command:
-        if command == 'ping':
-            help_text = "`!ping` - 顯示機器人回復延遲"
-        elif command == 'memes':
-            help_text = "`!memes` - 網絡迷因"
-        elif command == 'echo':
-            help_text = "`!echo [message]` - 回聲"
-        elif command == 'blackjack':
-            help_text = "`!blackjack` - 21點"
-        elif command == 'balance':
-            help_text = "`!balance` - 查询余额"
-        elif command == 'work':
-            help_text = "`!work` - 赚取金钱"
-        elif command == 'shutdown':
-            help_text = "`!shutdown` - 关闭机器人 (製作者)"
-        elif command == 'restart':
-            help_text = "`!restart` - 重启机器人 (製作者)"
-        elif command == 'ban':
-            help_text = "`!ban [user] [reason]` - 封禁特定用戶 (管理員)"
-        elif command == 'kick':
-            help_text = "`!kick [user] [reason]` - 提出用戶 (管理員)"
-        else:
-            help_text = "未知的指令"
-        
-    await ctx.send(help_text)
+        rpg_data[user_id] = {
+            "level": 1,
+            "exp": 0,
+            "money": 100,
+            "items": []
+        }
+        save_rpg_data(rpg_data)
+        await interaction.response.send_message("你已经开始了 RPG 游戏！")
 
-@bot.command()
-async def ping(ctx):
-    latency = bot.latency * 1000
-    await ctx.send(f'pong!: {latency:.2f} ms')
+@bot.tree.command(name="rpg_shop", description="显示 RPG 商店")
+async def rpg_shop(interaction: discord.Interaction):
+    shop_items = {
+        "剑": 50,
+        "盾": 30,
+        "药水": 20
+    }
+    shop_text = "商店物品及价格:\n"
+    for item, price in shop_items.items():
+        shop_text += f"{item}: {price} 比特幣\n"
+    await interaction.response.send_message(shop_text)
 
-@bot.command()
-async def memes(ctx):
-    response = requests.get("")
-    if response.status_code == 200:
-        meme_url = response.json().get("image")
-        await ctx.send(meme_url)
+@bot.tree.command(name="rpg_adventure", description="前往地下城冒险")
+async def rpg_adventure(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    if user_id not in rpg_data:
+        await interaction.response.send_message("你尚未开始 RPG 游戏！使用 /rpg 开始游戏。")
+        return
+
+    result = random.choice(["胜利", "失败"])
+    if result == "胜利":
+        reward = random.randint(10, 50)
+        rpg_data[user_id]["money"] += reward
+        save_rpg_data(rpg_data)
+        await interaction.response.send_message(f"你在冒险中胜利了！获得了 {reward} 比特幣。")
     else:
-        await ctx.send("無法獲取迷因")
+        await interaction.response.send_message("你在冒险中失败了。下次好运！")
 
-@bot.command()
-async def work(ctx):
-    user = ctx.author.id
-    now = datetime.now(timezone.utc)
-    
-    last_work_time = user_cooldown.get(str(user))
-    if last_work_time:
-        last_work_time = datetime.fromisoformat(last_work_time)
-        cooldown_duration = timedelta(hours=1)
-        if now < last_work_time + cooldown_duration:
-            time_left = (last_work_time + cooldown_duration - now).total_seconds()
-            await ctx.send(f'你需要等 {int(time_left // 60)} 分钟后才能再次工作。')
+@bot.tree.command(name="rpg_info", description="显示 RPG 用户信息")
+async def rpg_info(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    if user_id not in rpg_data:
+        await interaction.response.send_message("你尚未开始 RPG 游戏！使用 /rpg 开始游戏。")
+        return
+
+    user_data = rpg_data[user_id]
+    info_text = f"""
+    角色等级: {user_data['level']}
+    经验值: {user_data['exp']}
+    比特币: {user_data['money']}
+    背包物品: {', '.join(user_data['items'])}
+    """
+    await interaction.response.send_message(info_text)
+
+@bot.tree.command(name="rpg_profile", description="显示 RPG 用户个人主页")
+async def rpg_profile(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    if user_id not in rpg_data:
+        await interaction.response.send_message("你尚未开始 RPG 游戏！使用 /rpg 开始游戏。")
+        return
+
+    user_data = rpg_data[user_id]
+    profile_text = f"""
+    **角色信息**
+    等级: {user_data['level']}
+    经验: {user_data['exp']}
+    比特币: {user_data['money']}
+    背包物品: {', '.join(user_data['items'])}
+    """
+    await interaction.response.send_message(profile_text)
+
+@bot.tree.command(name="addmoney", description="给用户增加比特币（管理员专用）")
+async def addmoney(interaction: discord.Interaction, member: discord.Member, amount: int):
+    if interaction.user.id == ALLOWED_AUTHOR_ID:
+        recipient_id = str(member.id)
+        user_balance[recipient_id] = user_balance.get(recipient_id, 0) + amount
+        save_balance(user_balance)
+        await interaction.response.send_message(f'给 {member.name} 增加了 {amount} 比特币。')
+    else:
+        await interaction.response.send_message("你没有权限执行此操作。")
+
+@bot.tree.command(name="shutdown", description="关闭机器人")
+async def shutdown(interaction: discord.Interaction):
+    if interaction.user.id == ALLOWED_AUTHOR_ID:
+        await interaction.response.send_message("关闭中...")
+        await bot.close()
+    else:
+        await interaction.response.send_message("你没有权限执行此操作。")
+
+@bot.tree.command(name="restart", description="重启机器人")
+async def restart(interaction: discord.Interaction):
+    if interaction.user.id == ALLOWED_AUTHOR_ID:
+        await interaction.response.send_message("重启中...")
+        os.execv(sys.executable, ['python'] + sys.argv)
+    else:
+        await interaction.response.send_message("你没有权限执行此操作。")
+
+@bot.tree.command(name="ban", description="封禁用户")
+async def ban(interaction: discord.Interaction, member: discord.Member, reason: str = None):
+    if interaction.user.guild_permissions.ban_members:
+        await member.ban(reason=reason)
+        await interaction.response.send_message(f'{member} 已被封禁.')
+    else:
+        await interaction.response.send_message("你没有权限执行此操作。")
+
+@bot.tree.command(name="kick", description="踢出用户")
+async def kick(interaction: discord.Interaction, member: discord.Member, reason: str = None):
+    if interaction.user.guild_permissions.kick_members:
+        await member.kick(reason=reason)
+        await interaction.response.send_message(f'{member} 已被踢出.')
+    else:
+        await interaction.response.send_message("你没有权限执行此操作。")
+
+@bot.tree.command(name="clear", description="清除消息")
+async def clear(interaction: discord.Interaction, amount: int):
+    if interaction.user.guild_permissions.manage_messages:
+        if amount <= 0:
+            await interaction.response.send_message("请输入一个大于 0 的数字。")
             return
-   
-    user_cooldown[str(user)] = now.isoformat()
-    save_cooldown(user_cooldown)
-   
-    earned_amount = random.randint(10, 100)
-    user_balance[user] = user_balance.get(user, 0) + earned_amount
-    save_balance(user_balance)
-    
-    await ctx.send(f'你赚了 {earned_amount} 比特幣! 当前余额是: {user_balance[user]} 比特幣')
+        if amount > 100:
+            await interaction.response.send_message("无法一次性删除超过 100 条消息。")
+            return
 
-@bot.command()
-async def balance(ctx):
-    user = ctx.author.id
-    balance = user_balance.get(user, 0)
-    print(f'Balance for user {user}: {balance}')
-    await ctx.send(f'你的余额是: {balance} 比特幣')
+        cutoff_date = datetime.utcnow() - timedelta(days=30)
+        deleted = 0
 
-@bot.command()
-async def pay(ctx, member: discord.Member, amount: int):
-    user = ctx.author.id
-    print(f'Pay command called by user {user} for {amount} to {member.id}')  # Debug output
-    if amount <= 0:
-        await ctx.send('金額必須大於0')
-        return
-    if user_balance.get(user, 0) < amount:
-        await ctx.send('你的余额不足')
-        return
-    user_balance[user] -= amount
-    user_balance[member.id] = user_balance.get(member.id, 0) + amount
-    save_balance(user_balance)
-    await ctx.send(f'你支付了 {amount} 比特幣給 {member.display_name}')
+        async for message in interaction.channel.history(limit=amount):
+            if message.created_at >= cutoff_date:
+                await message.delete()
+                deleted += 1
 
-@bot.command()
-@commands.has_permissions(ban_members=True)
-async def ban(ctx, member: discord.Member, *, reason=None):
-    await member.ban(reason=reason)
-    await ctx.send(f'用戶 {member.name} 已被封禁')
-
-@bot.command()
-@commands.has_permissions(kick_members=True)
-async def kick(ctx, member: discord.Member, *, reason=None):
-    await member.kick(reason=reason)
-    await ctx.send(f'用戶 {member.name} 已被踢出')
-
-@bot.command()
-@commands.has_permissions(administrator=True)
-async def addmoney(ctx, amount: int, user: discord.Member = None):
-    """
-    增加指定用户的余额。如果没有指定用户，则默认为增加调用者的余额。
-    只有管理员可以使用这个命令。
-    """
-    if amount <= 0:
-        await ctx.send("增加的金额必须大于0")
-        return
-
-    if user is None:
-        user = ctx.author
-
-    user_id = user.id
-    if user_id not in user_balance:
-        user_balance[user_id] = 0
-
-    user_balance[user_id] += amount
-    await ctx.send(f'{user.name} 的余额增加了 {amount} 比特幣! 当前余额是: {user_balance[user_id]} 比特幣')
-
-def draw_card():
-    cards = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
-    return random.choice(cards)
-
-def card_value(card):
-    if card in ['J', 'Q', 'K']:
-        return 10
-    elif card == 'A':
-        return 11
+        await interaction.response.send_message(f'已删除 {deleted} 条消息。', delete_after=5)
     else:
-        return int(card)
+        await interaction.response.send_message("你没有权限执行此操作。")
 
-@bot.command()
-async def blackjack(ctx):
-    player_hand = [draw_card(), draw_card()]
-    player_total = sum(card_value(card) for card in player_hand)
-
-    dealer_hand = [draw_card(), draw_card()]
-    dealer_total = sum(card_value(card) for card in dealer_hand)
-
-    player_hand_str = ', '.join(player_hand)
-    dealer_hand_str = ', '.join(dealer_hand)
-
-    async def send_game_state():
-        await ctx.send(f'你的手牌: {player_hand_str} (總計: {player_total})\n莊家的手牌: {dealer_hand_str} (總計: {dealer_total})')
-
-    await send_game_state()
-
-    if player_total == 21:
-        await ctx.send('黑傑克！你贏了！')
-        return
-
-    class BlackjackView(discord.ui.View):
-        def __init__(self):
-            super().__init__()
-            self.player_hand = player_hand
-            self.player_total = player_total
-            self.dealer_hand = dealer_hand
-            self.dealer_total = dealer_total
-
-        @discord.ui.button(label='加牌', style=discord.ButtonStyle.primary)
-        async def hit(self, interaction: discord.Interaction, button: discord.ui.Button):
-            new_card = draw_card()
-            self.player_hand.append(new_card)
-            self.player_total += card_value(new_card)
-            await interaction.response.send_message(f'你抽到了: {new_card}', ephemeral=True)
-            await send_game_state()
-            if self.player_total > 21:
-                await ctx.send('你爆牌了！莊家贏了！')
-                self.stop()
-            elif self.player_total == 21:
-                await ctx.send('黑傑克！你贏了！')
-                self.stop()
-
-        @discord.ui.button(label='雙倍加注', style=discord.ButtonStyle.secondary)
-        async def double_down(self, interaction: discord.Interaction, button: discord.ui.Button):
-            new_card = draw_card()
-            self.player_hand.append(new_card)
-            self.player_total += card_value(new_card)
-            await interaction.response.send_message(f'你抽到了: {new_card}', ephemeral=True)
-            await send_game_state()
-            if self.player_total == 21:
-                await ctx.send('黑傑克！你贏了！')
-            elif self.player_total > 21:
-                await ctx.send('你爆牌了！莊家贏了！')
-            else:
-                await ctx.send('最終結果：\n')
-                await send_game_state()
-            self.stop()
-
-        @discord.ui.button(label='棄牌', style=discord.ButtonStyle.danger)
-        async def surrender(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await interaction.response.send_message('你選擇了棄牌', ephemeral=True)
-            self.stop()
-
-    view = BlackjackView()
-    await ctx.send('選擇你的動作:', view=view)
-
-@bot.command()
-async def restart(ctx):
-    if ctx.author.id != 699869229712670780:
-        await ctx.send("你不能使用該指令")
-        return
-    
-    save_balance(user_balance)
-    save_cooldown(user_cooldown)
-    
-    await ctx.send('正在重启机器人...')
-    
-    os.execl(sys.executable, sys.executable, *sys.argv)
-
-@bot.command()
-async def shutdown(ctx):
-    if ctx.author.id != 699869229712670780:
-        await ctx.send("你不能使用該指令")
-        return
-    
-    save_balance(user_balance)
-    save_cooldown(user_cooldown)
-    
-    await ctx.send('正在关闭机器人...')
-    
-    await bot.close()
-
-@bot.command()
-async def roll(ctx, sides: int = 100):
+@bot.tree.command(name="help", description="显示所有可用指令")
+async def help(interaction: discord.Interaction):
+    help_text = """
+    /balance - 查询用户余额
+    /work - 赚取比特币
+    /pay - 转账给其他用户
+    /rpg - 初始化 RPG 用户数据
+    /rpg_shop - 显示 RPG 商店
+    /rpg_adventure - 前往地下城冒险
+    /rpg_info - 显示 RPG 用户信息
+    /rpg_profile - 显示 RPG 用户个人主页
+    /addmoney - 给用户增加比特币（管理员權限）
+    /ban - 封禁用户 (管理員權限)
+    /kick - 踢出用户 (管理員權限)
+    /clear - 清除消息 (管理員權限)
+    /shutdown - 關閉機器人 (製作者beta測試使用指令)
+    /restart - 重啓機器人 (製作者beta測試使用指令)
+    more commands is comeing soon...
     """
-    Roll a dice with a specified number of sides (default is 100).
-    """
-    if sides <= 0:
-        await ctx.send("骰子的面数必须大于0")
-        return
+    await interaction.response.send_message(help_text)
 
-    roll_result = random.randint(1, sides)
-    await ctx.send(f'你掷了一个 {sides} 面的骰子，结果是: {roll_result}')
+def log_error(message):
+    with open('log.json', 'a') as log_file:
+        log_file.write(f'{datetime.now()}: {message}\n')
 
 bot.run(TOKEN)
