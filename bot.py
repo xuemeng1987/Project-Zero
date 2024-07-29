@@ -9,7 +9,6 @@ import pytz
 import sys
 
 TOKEN = 'token'
-
 ALLOWED_AUTHOR_ID = 699869229712670780
 
 intents = discord.Intents.default()
