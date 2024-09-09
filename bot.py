@@ -16,6 +16,7 @@ from discord.ui import Button, View
 from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from urllib.parse import urlparse
+from responses import food_responses, death_responses, life_death_responses, self_responses, friend_responses, maid_responses, mistress_responses, reimu_responses, get_random_response
 
 load_dotenv()
 
@@ -175,6 +176,8 @@ async def on_message(message):
     if message.author == bot.user:
         return
     
+    content = message.content
+    
     if '關於幽幽子' in message.content.lower():
         await message.channel.send('幽幽子的創建時間是<t:1623245700:D>')
     
@@ -207,7 +210,7 @@ async def on_message(message):
         current_time = time.time()
         idle_seconds = current_time - last_activity_time
         idle_minutes = idle_seconds / 60
-        await message.channel.send(f'幽幽子目前已待機了 {idle_minutes:.2f} 分钟')
+        await message.channel.send(f'幽幽子目前已待機了 **{idle_minutes:.2f} 分钟**')
 
     if isinstance(message.channel, discord.DMChannel):
         user_id = str(message.author.id)
@@ -220,8 +223,73 @@ async def on_message(message):
         save_dm_messages(dm_messages)
         print(f"Message from {message.author}: {message.content}")
     
-    if 'スタープラチナ' in message.content.lower():
-        await message.channel.send('ザ・ワールド\n\nhttps://tenor.com/view/the-world-gif-18508433')
+    if 'これが最後の一撃だ！名に恥じぬ、ザ・ワールド、時よ止まれ！' in message.content.lower():
+        await message.channel.send('ザ・ワールド\nhttps://tenor.com/view/the-world-gif-18508433')
+
+        await asyncio.sleep(1)
+        await message.channel.send('一秒経過だ！')
+
+        await asyncio.sleep(3)
+        await message.channel.send('二秒経過だ、三秒経過だ！')
+
+        await asyncio.sleep(4)
+        await message.channel.send('四秒経過だ！')
+
+        await asyncio.sleep(5)
+        await message.channel.send('五秒経過だ！')
+
+        await asyncio.sleep(6)
+        await message.channel.send('六秒経過だ！')
+
+        await asyncio.sleep(7)
+        await message.channel.send('七秒経過した！')
+
+        await asyncio.sleep(8)
+        await message.channel.send('ジョジョよ、**私のローラー**!\nhttps://tenor.com/view/dio-roada-rolla-da-dio-brando-dio-dio-jojo-dio-part3-gif-16062047')
+    
+        await asyncio.sleep(9)
+        await message.channel.send('遅い！逃げられないぞ！\nhttps://tenor.com/view/dio-jojo-gif-13742432')
+    
+    if '星爆氣流斬' in message.content.lower():
+        await message.channel.send('アスナ！クライン！')
+        await message.channel.send('**頼む、十秒だけ持ち堪えてくれ！**')
+        
+        await asyncio.sleep(2)
+        await message.channel.send('スイッチ！')
+    
+        await asyncio.sleep(10)
+        await message.channel.send('# スターバースト　ストリーム！')
+        
+        await asyncio.sleep(5)
+        await message.channel.send('**速く…もっと速く！！**')
+        
+        await asyncio.sleep(15)
+        await message.channel.send('終わった…のか？')        
+        
+    if '食物' in content:
+        await message.channel.send(get_random_response(food_responses))
+
+    elif '死亡' in content:
+        await message.channel.send(get_random_response(death_responses))
+
+    elif '生死' in content:
+        await message.channel.send(get_random_response(life_death_responses))
+    
+    elif '幽幽子' in content:
+        await message.channel.send(get_random_response(self_responses))
+    
+    elif '關於幽幽子的朋友' in content:
+        await message.channel.send(get_random_response(friend_responses))
+    
+    elif '關於紅魔館的女僕' in content:
+        await message.channel.send(get_random_response(maid_responses))
+    
+    elif '關於紅魔舘的大小姐和二小姐' in content:
+        await message.channel.send(get_random_response(mistress_responses))
+    
+    elif '關於神社的巫女' in content:
+        await message.channel.send(get_random_response(reimu_responses))
+
     
     await bot.process_commands(message)
 
@@ -231,7 +299,7 @@ async def on_ready():
     
     await bot.change_presence(
         status=discord.Status.idle,
-        activity=discord.Activity(type=discord.ActivityType.playing, name='Minecraft')
+        activity=discord.Activity(type=discord.ActivityType.playing, name='Undertale')
     )
     
     try:
@@ -241,6 +309,19 @@ async def on_ready():
         print(f'同步命令时出错: {e}')
     
     last_activity_time = time.time()
+
+@bot.tree.command(name="invite", description="生成机器人的邀请链接")
+async def invite(interaction: discord.Interaction):
+    client_id = bot.user.id
+    permissions = 15
+    invite_url = f"https://discord.com/oauth2/authorize?client_id={client_id}&permissions={permissions}&scope=bot"
+    
+    await interaction.response.send_message(f"邀请链接：{invite_url}")
+
+@bot.tree.command(name="rpg_start", description="初始化RPG數據")
+async def rpg(interaction: discord.Interaction):
+    message = "RPG系統正在製作中 預計時裝時間是 <t:1727712000:R>"
+    await interaction.response.send_message(message)
 
 @bot.tree.command(name="balance", description="查询用户余额")
 async def balance(interaction: discord.Interaction):
@@ -271,11 +352,6 @@ async def pay(interaction: discord.Interaction, member: discord.Member, amount: 
     save_balance(user_balance)
     await interaction.response.send_message(f'{interaction.user.name} 给 {member.name} 转账了 {amount} 比特幣')
 
-@bot.tree.command(name="rpg", description="RPG 系统暂时关闭")
-async def rpg(interaction: discord.Interaction):
-    message = "RPG 系统正在维护中，需要一段时间。尽请期待。"
-    await interaction.response.send_message(message)
-
 @bot.tree.command(name="addmoney", description="给用户增加比特币（管理员专用）")
 async def addmoney(interaction: discord.Interaction, member: discord.Member, amount: int):
     if interaction.user.guild_permissions.administrator:
@@ -302,18 +378,26 @@ async def removemoney(interaction: discord.Interaction, member: discord.Member, 
 @bot.tree.command(name="shutdown", description="关闭机器人")
 async def shutdown(interaction: discord.Interaction):
     if interaction.user.id == AUTHOR_ID:
-        await interaction.response.send_message("关闭中...")
-        await bot.close()
+        try:
+            await interaction.response.defer(ephemeral=True)
+            await interaction.followup.send("关闭中...")
+            await bot.close()
+        except Exception as e:
+            print(f"Shutdown command failed: {e}")
     else:
-        await interaction.response.send_message("你没有权限执行此操作。")
+        await interaction.response.send_message("你没有权限执行此操作。", ephemeral=True)
 
 @bot.tree.command(name="restart", description="重启机器人")
 async def restart(interaction: discord.Interaction):
     if interaction.user.id == AUTHOR_ID:
-        await interaction.response.send_message("重启中...")
-        os.execv(sys.executable, ['python'] + sys.argv)
+        try:
+            await interaction.response.defer(ephemeral=True)
+            await interaction.followup.send("重启中...")
+            os.execv(sys.executable, ['python'] + sys.argv)
+        except Exception as e:
+            print(f"Restart command failed: {e}")
     else:
-        await interaction.response.send_message("你没有权限执行此操作。")
+        await interaction.response.send_message("你没有权限执行此操作。", ephemeral=True)
 
 @bot.tree.command(name="ban", description="封禁用户")
 async def ban(interaction: discord.Interaction, member: discord.Member, reason: str = None):
@@ -417,8 +501,8 @@ async def roll(interaction: discord.Interaction, max_value: int = None):
     if max_value < 1:
         await interaction.response.send_message("請輸入一個大於0的數字。")
         return
-    elif max_value > 1000000:
-        await interaction.response.send_message("請輸入一個小於或等於1000000的數字。")
+    elif max_value > 10000:
+        await interaction.response.send_message("請輸入一個小於或等於10000的數字。")
         return
 
     result = random.randint(1, max_value)
@@ -443,7 +527,11 @@ async def server_info(interaction: discord.Interaction):
         await interaction.response.send_message("這個命令只能在伺服器中使用。")
         return
 
-    owner = guild.owner or guild.get_member(guild.owner_id)
+    try:
+        owner = await guild.fetch_member(guild.owner_id)
+    except discord.HTTPException:
+        owner = None
+
     member_count = guild.member_count
     role_count = len(guild.roles)
     created_at = guild.created_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -460,52 +548,55 @@ async def server_info(interaction: discord.Interaction):
     if guild_icon_url:
         embed.set_thumbnail(url=guild_icon_url)
 
-    class ServerImageView(View):
-        @discord.ui.button(label="點擊我獲取伺服器圖片", style=discord.ButtonStyle.green)
-        async def get_image(self, interaction: discord.Interaction, button: Button):
-            if guild_icon_url:
-                await interaction.response.send_message(f"這裡是伺服器的圖片：{guild_icon_url}")
-            else:
-                await interaction.response.send_message("這個伺服器沒有圖片。", ephemeral=True)
-
-    view = ServerImageView()
+    view = ServerInfoView(guild_icon_url)
     await interaction.response.send_message(embed=embed, view=view)
-    
+
+class AvatarButton(discord.ui.View):
+    def __init__(self, user: discord.User):
+        super().__init__()
+        self.user = user
+
+    @discord.ui.button(label="獲取頭像", style=discord.ButtonStyle.primary)
+    async def get_avatar(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message(self.user.display_avatar.url, ephemeral=True)
+
 @bot.tree.command(name="user_info", description="獲取用戶資訊")
 @app_commands.describe(user="選擇用戶")
 async def user_info(interaction: discord.Interaction, user: discord.User = None):
+    await interaction.response.defer()
+
     if user is None:
         user = interaction.user
 
-    member = interaction.guild.get_member(user.id)
+    try:
+        member = await interaction.guild.fetch_member(user.id)
+    except discord.errors.NotFound:
+        member = None
+
     created_at = user.created_at.strftime("%Y-%m-%d %H:%M:%S")
     
-    if member is None:
-        embed_color = discord.Color.red()
-    else:
+    if member:
         embed_color = discord.Color.green()
+        highest_role = member.roles[-1]
+        joined_at = member.joined_at.strftime("%Y-%m-%d %H:%M:%S")
+        server_status = f"已加入伺服器，自 {joined_at} 起"
+    else:
+        embed_color = discord.Color.red()
+        server_status = "該用戶未加入伺服器"
     
     embed = discord.Embed(title=f"{user.name} 的用戶資訊", color=embed_color)
     embed.add_field(name="用戶名稱", value=user.name, inline=False)
     embed.add_field(name="用戶ID", value=user.id, inline=False)
     embed.add_field(name="賬號創建時間", value=created_at, inline=False)
+    embed.add_field(name="伺服器狀態", value=server_status, inline=False)
     embed.set_thumbnail(url=user.display_avatar.url)
     
-    if member is None:
-        embed.add_field(name="伺服器狀態", value="該用戶未加入伺服器", inline=False)
-    else:
-        highest_role = member.roles[-1]
-        joined_at = member.joined_at.strftime("%Y-%m-%d %H:%M:%S")
+    if member:
         embed.add_field(name="最高身分組", value=highest_role.name, inline=False)
-        embed.add_field(name="加入伺服器時間", value=joined_at, inline=False)
-
-    class UserAvatarView(View):
-        @discord.ui.button(label="點擊我獲取用戶頭像", style=discord.ButtonStyle.green)
-        async def get_avatar(self, interaction: discord.Interaction, button: Button):
-            await interaction.response.send_message(f"這裡是 {user.name} 的頭像：{user.display_avatar.url}", ephemeral=True)
-
-    view = UserAvatarView()
-    await interaction.response.send_message(embed=embed, view=view)
+    
+    view = AvatarButton(user=user)
+    
+    await interaction.followup.send(embed=embed, view=view)
 
 class FeedbackView(View):
     def __init__(self, interaction: discord.Interaction, message: str):
@@ -529,7 +620,7 @@ class FeedbackView(View):
         )
         await self.interaction.edit_original_response(content=response_message, view=None)
 
-    @discord.ui.button(label="指令錯誤未回應 (203)", style=discord.ButtonStyle.primary)
+    @discord.ui.button(label="指令錯誤 (203)", style=discord.ButtonStyle.primary)
     async def error_203(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.log_feedback("203")
         self.stop()
@@ -567,14 +658,14 @@ async def help(interaction: discord.Interaction):
     > balance - 用戶餘額
     > work - 工作
     > pay - 轉賬```
-    ~~```ansi
+    ```ansi
     [2;37m[1;37m[1;36m[1;34m[0m[1;36mRPG地下城冒險游戲[0m[1;37m[0m[2;37m[0m
     > rpg - 開始用戶資料
-    > rpg_info - 個人資訊 #修改中
-    > rpg_shop - 商店街 #更新中
-    > rpg_adventure - 地下城冒險 #修改中
+    > rpg_info - 個人資訊
+    > rpg_shop - 商店街
+    > rpg_adventure - 地下城冒險
     > rpg_monsterlist - 地下城怪物列表
-    > rpg_itemlist - 物品列表```~~
+    > rpg_itemlist - 物品列表```
          >rpg暫時停用<
     ```ansi
     [2;32m管理員指令[0m[2;32m[0m[2;32m[2;32m[2;32m[2;32m[2;32m[0m[2;32m[0m[2;32m[0m[2;32m[0m[2;32m[0m
