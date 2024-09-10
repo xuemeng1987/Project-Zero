@@ -58,7 +58,7 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
    ```
 *Note*
 
-In some parts where the bot is shut down, there is a hardcoded AUTHOR_ID. You can set your actual Discord ID in the .env file. The actual setup would look like this:
+In some parts where the bot is shut down, there is a hardcoded **`AUTHOR_ID`**. You can set your actual Discord ID in the **`.env`** file. The actual setup would look like this:
 ```.env
 DISCORD_BOT_TOKEN=your_discord_bot_token
 AUTHOR_ID=your_discord_id
