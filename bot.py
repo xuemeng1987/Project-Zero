@@ -195,16 +195,20 @@ async def on_message(message):
             await message.channel.send("正在關閉...")
             await asyncio.sleep(5)
             await bot.close()
+            return
         else:
             await message.channel.send("你無權關閉我 >_< ")
+            return
 
     elif message.content.startswith('重啓幽幽子'):
         if message.author.id == AUTHOR_ID:
             await message.channel.send("正在重啟幽幽子...")
             subprocess.Popen([sys.executable, os.path.abspath(__file__)])
             await bot.close()
+            return
         else:
             await message.channel.send("你無權重啓我 >_< ")
+            return
     
     if '幽幽子待機多久了' in message.content.lower():
         current_time = time.time()
