@@ -56,6 +56,12 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
    ```bash
    python bot.py
    ```
+*Note*
+In some parts where the bot is shut down, there is a hardcoded AUTHOR_ID. You can set your actual Discord ID in the .env file. The actual setup would look like this:
+```.env
+DISCORD_BOT_TOKEN=your_discord_bot_token
+AUTHOR_ID=your_discord_id
+```
 
 ### Contributing
 Feel free to contribute to this project! Please fork the repository and create a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.
