@@ -53,9 +53,10 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
    BOT_TOKEN=your-bot-token-here
    ```
 5. Run the bot:
-   ```
+   ```bash
    python bot.py
    ```
+
 ### Contributing
 Feel free to contribute to this project! Please fork the repository and create a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.
 
@@ -68,4 +69,5 @@ If you have any questions or need assistance, you can contact me through:
 - Discord: Miya253
 - X: [@yuemeng62](https://x.com/yuemeng200)
 - GitHub: [xuemeng1987](https://github.com/xuemeng1987)
-Thank you for using our bot!
+
+### Thank you for using our bot!
