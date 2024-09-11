@@ -66,7 +66,7 @@ AUTHOR_ID=your_discord_id
 Feel free to contribute to this project! Please fork the repository and create a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.
 
 ## Invite The Bot
-[Yuyuko Bot]
+[Yuyuko Bot](https://discord.com/oauth2/authorize?client_id=852046004550238258&permissions=15&scope=bot)
 
 ## Contact
 If you have any questions or need assistance, you can contact me through:
