@@ -169,6 +169,16 @@ class URLBot(commands.Bot):
 
         await self.process_commands(message)
 
+def load_trivia_questions():
+    with open('trivia_questions.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data['questions']
+
+questions = load_trivia_questions()
+
+def get_random_question():
+    return random.choice(questions)
+
 @bot.event
 async def on_message(message):
     global last_activity_time
@@ -650,6 +660,78 @@ async def feedback(interaction: discord.Interaction, message: str):
     view = FeedbackView(interaction, message)
     await interaction.response.send_message("請選擇發生的錯誤代號:", view=view, ephemeral=True)
 
+def parse_time(time_str):
+    time_dict = {"d": 86400, "h": 3600, "m": 60}
+    total_seconds = 0
+    matches = re.findall(r"(\d+)([dhm])", time_str)
+    for value, unit in matches:
+        total_seconds += int(value) * time_dict[unit]
+    return total_seconds
+
+class GiveawayModal(discord.ui.Modal, title="設定抽獎"):
+    giveaway_content = discord.ui.TextInput(label="抽獎内容", placeholder="輸入抽獎内容", required=True)
+    announcement_time = discord.ui.TextInput(label="公佈時間 (格式：d/h/m)", placeholder="輸入時間，例：1d, 2h, 30m", required=True)
+
+    async def on_submit(self, interaction: discord.Interaction):
+        content = self.giveaway_content.value
+        time = self.announcement_time.value
+
+        button = Button(label="點擊我參與抽獎", style=discord.ButtonStyle.green)
+
+        async def button_callback(interaction: discord.Interaction):
+            if interaction.user not in participants:
+                participants.append(interaction.user)
+                await interaction.response.send_message(f"{interaction.user.name} 已參加抽獎！", ephemeral=True)
+            else:
+                await interaction.response.send_message("你已經參加過這次抽獎了！", ephemeral=True)
+
+        button.callback = button_callback
+        view = View()
+        view.add_item(button)
+
+        await interaction.response.send_message(f"抽獎內容：{content}\n公佈時間：{time}", view=view)
+
+        total_seconds = parse_time(time)
+        await asyncio.sleep(total_seconds)
+
+        if participants:
+            winner = random.choice(participants)
+            await interaction.followup.send(f"恭喜 {winner.name}！你是這次抽獎的贏家！")
+            participants.clear()
+        else:
+            await interaction.followup.send("沒有參加者，無法進行抽獎！")
+
+@bot.tree.command(name="start_giveaway", description="管理員設定抽獎")
+@app_commands.checks.has_permissions(administrator=True)
+async def start_giveaway(interaction: discord.Interaction):
+    modal = GiveawayModal()
+    await interaction.response.send_modal(modal)
+
+@bot.tree.command(name="trivia", description="動漫 Trivia 問題挑戰")
+async def trivia(interaction: discord.Interaction):
+    question_data = get_random_question()
+
+    question = question_data['question']
+    choices = question_data['choices']
+    answer = question_data['answer']
+
+    view = discord.ui.View()
+    for choice in choices:
+        button = discord.ui.Button(label=choice)
+
+        async def button_callback(interaction: discord.Interaction, choice=choice):
+            if choice == answer:
+                await interaction.response.send_message(f"正確！答案是：{answer}", ephemeral=True)
+            else:
+                await interaction.response.send_message(f"錯誤！正確答案是：{answer}", ephemeral=True)
+
+            await interaction.message.edit(content=f"問題：{question}\n\n正確答案是：{answer}", view=None)
+
+        button.callback = button_callback
+        view.add_item(button)
+
+    await interaction.response.send_message(f"問題：{question}", view=view)
+
 @bot.tree.command(name="help", description="显示所有可用指令")
 async def help(interaction: discord.Interaction):
     help_text = """
@@ -676,7 +758,8 @@ async def help(interaction: discord.Interaction):
     > ban - 封鎖用戶
     > kick - 踢出用戶
     > addmoney - 添加金錢 #比特幣
-    > removemoney - 移除金錢 #比特幣```
+    > removemoney - 移除金錢 #比特幣
+    > strat_giveaway - 開啓抽獎```
     
     ```ansi
     [2;32m普通指令[0m[2;32m[0m[2;32m[2;32m[2;32m[2;32m[2;32m[0m[2;32m[0m[2;32m[0m[2;32m[0m[2;32m[0m
@@ -685,6 +768,7 @@ async def help(interaction: discord.Interaction):
     > server_info - 獲取伺服器資訊
     > user_info - 獲取用戶資訊
     > feedback - 回報錯誤
+    > trivia - 問題挑戰(動漫)
     ```
     
     > `more commands is comeing soon...`
