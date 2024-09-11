@@ -8,6 +8,7 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
 - **`/invite`**: Generates an invite link for the bot.
 - **`/ping`**: Shows the bot's current latency.
 - **`/time`**: Displays the bot's last activity time.
+- **`/trivia`**: Start a Trivia Quiz Challenge (Anime)
 
 ### **Economy System**
 - **`/balance`**: Check your Bitcoin balance.
@@ -20,6 +21,7 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
 - **`/ban`**: Bans a user from the server (admin only).
 - **`/kick`**: Kicks a user from the server (admin only).
 - **`/clear`**: Clears messages from the channel (admin only).
+- **`/start_giveaway`**: Start a giveaway event (Admins only).
 
 ### **User and Server Info**
 - **`/server_info`**: Provides information about the server.
