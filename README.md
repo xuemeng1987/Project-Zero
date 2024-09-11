@@ -17,8 +17,6 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
 - **`/removemoney`**: Remove Bitcoin from a user’s account (admin only).
 
 ### **Admin Commands**
-- **`/shutdown`**: Shuts down the bot (admin only).
-- **`/restart`**: Restarts the bot (admin only).
 - **`/ban`**: Bans a user from the server (admin only).
 - **`/kick`**: Kicks a user from the server (admin only).
 - **`/clear`**: Clears messages from the channel (admin only).
