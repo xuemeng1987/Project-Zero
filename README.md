@@ -65,8 +65,8 @@ AUTHOR_ID=your_discord_id
 ## Contributing
 Feel free to contribute to this project! Please fork the repository and create a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.
 
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+## Invite The Bot
+[Yuyuko Bot]
 
 ## Contact
 If you have any questions or need assistance, you can contact me through:
