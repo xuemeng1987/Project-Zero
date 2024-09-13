@@ -170,4 +170,146 @@ async def restart(interaction: discord.Interaction):
     else:
         await interaction.response.send_message("你没有权限执行此操作。")
 
+@bot.tree.command(name="rpg_start", description="初始化角色数据")
+async def rpg_start(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    data = {
+        'lv': 1,
+        'exp': 0,
+        'hp': 20,
+        'mp': 20,
+        'stamina': 10
+    }
+    with open(f'rpg-data/{user_id}.yml', 'w') as file:
+        yaml.dump(data, file)
+    await interaction.response.send_message("角色已初始化，开始你的冒险吧！")
+
+@bot.tree.command(name="rpg_backpack", description="开启背包")
+async def rpg_backpack(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    try:
+        with open(f'backpack/{user_id}.yml', 'r') as file:
+            backpack = yaml.safe_load(file)
+        await interaction.response.send_message(f"你的背包内容: {backpack}")
+    except FileNotFoundError:
+        await interaction.response.send_message("你的背包是空的。")
+
+@bot.tree.command(name="rpg_info", description="查看角色信息")
+async def rpg_info(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    try:
+        with open(f'rpg-data/{user_id}.yml', 'r') as file:
+            player_data = yaml.safe_load(file)
+        await interaction.response.send_message(
+            f"等級: {player_data['lv']}\n"
+            f"生命: {player_data['hp']}\n"
+            f"魔力: {player_data['mp']}\n"
+            f"體力: {player_data['stamina']}"
+        )
+    except FileNotFoundError:
+        await interaction.response.send_message("你还没有初始化角色，请使用 `/rpg_start` 初始化。")
+
+class ShopSelect(Select):
+    def __init__(self, shop_items):
+        options = [
+            discord.SelectOption(label="鐵匠鋪", description="武器和裝備"),
+            discord.SelectOption(label="魔法舖", description="魔法用品"),
+            discord.SelectOption(label="小吃舖", description="恢復物品")
+        ]
+        super().__init__(placeholder="選擇商店", options=options)
+        self.shop_items = shop_items
+
+    async def callback(self, interaction: discord.Interaction):
+        shop = self.values[0]
+        items = self.shop_items.get(shop, [])
+        
+        if not items:
+            await interaction.response.send_message(f"{shop}暂时没有商品", ephemeral=True)
+            return
+        
+        buttons = []
+        for item in items:
+            button = Button(label=f"{item['name']} - {item['price']} BTC", style=discord.ButtonStyle.primary)
+            button.callback = self.create_purchase_callback(item, interaction.user.id)
+            buttons.append(button)
+        
+        view = View()
+        for btn in buttons:
+            view.add_item(btn)
+        await interaction.response.send_message(f"你选择了 {shop}，以下是可购买的商品：", view=view)
+
+    def create_purchase_callback(self, item, user_id):
+        async def purchase_callback(interaction: discord.Interaction):
+            modal = PurchaseModal(item, user_id)
+            await interaction.response.send_modal(modal)
+        return purchase_callback
+
+class PurchaseModal(Modal):
+    def __init__(self, item, user_id):
+        super().__init__(title="购买物品")
+        self.item = item
+        self.user_id = user_id
+        self.add_item(InputText(label="输入购买数量", placeholder="请输入数量", min_length=1, max_length=10))
+
+    async def on_submit(self, interaction: discord.Interaction):
+        quantity = int(self.children[0].value)
+        total_cost = quantity * self.item['price']
+        await interaction.response.send_message(f"你购买了 {quantity} 个 {self.item['name']}，共花费 {total_cost} BTC")
+
+@bot.tree.command(name="rpg_shop", description="前往商店")
+async def rpg_shop(interaction: discord.Interaction):
+    with open('shop_item.yml', 'r') as file:
+        shop_items = yaml.safe_load(file)
+    
+    view = View()
+    view.add_item(ShopSelect(shop_items))
+    
+    await interaction.response.send_message("欢迎来到商店，请选择你要访问的店铺：", view=view)
+
+@bot.tree.command(name="rpg_adventure", description="開啟冒險")
+async def rpg_adventure(interaction: discord.Interaction):
+    try:
+        with open('dungeon.yml', 'r') as dungeon_file:
+            dungeon_data = yaml.safe_load(dungeon_file)
+        with open('monster_item.yml', 'r') as monster_item_file:
+            monster_items = yaml.safe_load(monster_item_file)
+        with open('monster.yml', 'r') as monster_file:
+            monsters = yaml.safe_load(monster_file)
+        
+        await interaction.response.send_message("冒險開始！")
+    
+    except FileNotFoundError as e:
+        missing_file = str(e).split("'")[1]
+        
+        embed = discord.Embed(
+            title="錯誤: 文件丟失",
+            description=f"文件 `{missing_file}` 丟失，請聯繫作者以解決此問題。",
+            color=discord.Color.red()
+        )
+        embed.add_field(name="GitHub", value="[點擊這裡聯繫作者](https://github.com/xuemeng1987)")
+        embed.set_footer(text="感謝您的理解！")
+
+        await interaction.response.send_message(embed=embed)
+
+        logging.error(f"文件丟失: {missing_file}，請檢查源代碼中相關文件的存在性。")
+
+@bot.tree.command(name="rpg_playerbattle", description="与其他玩家决斗")
+async def rpg_playerbattle(interaction: discord.Interaction, opponent: discord.Member):
+    if interaction.user.id == opponent.id:
+        await interaction.response.send_message("你不能和自己决斗！")
+        return
+
+    await interaction.response.send_message(f"{interaction.user.mention} 已向 {opponent.mention} 發起挑戰！誰會獲得勝利？")
+
+@bot.tree.command(name="balance", description="查看比特币余额")
+async def balance(interaction: discord.Interaction):
+    user_id = str(interaction.user.id)
+    try:
+        with open(f'balance/{user_id}.yml', 'r') as file:
+            balance_data = yaml.safe_load(file)
+        await interaction.response.send_message(f"你的比特币余额为: {balance_data['bitcoin']} BTC")
+    except FileNotFoundError:
+        await interaction.response.send_message("你还没有余额记录。")
+
+
 bot.run(TOKEN)
