@@ -29,8 +29,29 @@ intents = discord.Intents.default()
 intents.message_content = True
 last_activity_time = time.time()
 intents.messages = True
+participants = []
 
-bot = commands.Bot(command_prefix='/', intents=intents, shard_count=6)
+class URLBot(commands.Bot):
+    def __init__(self, command_prefix, intents):
+        super().__init__(command_prefix=command_prefix, intents=intents)
+        self.whitelist = set()
+        self.load_whitelist()
+
+    def load_whitelist(self):
+        try:
+            with open('whitelist.json', 'r') as file:
+                self.whitelist = set(json.load(file))
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.whitelist = set()
+
+    async def save_whitelist(self):
+        async with aiofiles.open('whitelist.json', 'w') as file:
+            await file.write(json.dumps(list(self.whitelist)))
+
+    def is_domain_whitelisted(self, domain):
+        return any(domain.endswith(whitelisted) for whitelisted in self.whitelist)
+
+bot = URLBot(command_prefix='/', intents=intents)
 
 def load_whitelist():
     try:
@@ -63,16 +84,12 @@ async def check_url_safety(url: str) -> bool:
         try:
             async with session.get(url) as response:
                 content = await response.text()
-
                 if "adult" in content.lower() or "unsafe" in content.lower():
                     return False
         except Exception as e:
             logging.warning(f"Failed to check URL {url}: {e}")
             return False
     return True
-
-def is_domain_whitelisted(domain):
-    return any(domain.endswith(whitelisted) for whitelisted in whitelist)
 
 user_balance = {}
 
@@ -184,6 +201,9 @@ async def on_message(message):
     global last_activity_time
     
     if message.author == bot.user:
+        return
+    
+    if message.webhook_id:
         return
     
     content = message.content
@@ -304,6 +324,33 @@ async def on_message(message):
     elif '關於神社的巫女' in content:
         await message.channel.send(get_random_response(reimu_responses))
 
+    if message.embeds:
+        for embed in message.embeds:
+            if embed.url is not None and (embed.type == 'gifv' or 'gif' in embed.url):
+                domain = urlparse(embed.url).netloc
+                if not bot.is_domain_whitelisted(domain):
+                    await message.delete()
+                    await message.channel.send(f"{message.author.mention}, 該GIF來自未经许可的域名，不允许发送。")
+                    return
+
+    if message.attachments:
+        for attachment in message.attachments:
+            if attachment.url.endswith(('gif', 'gifv')):
+                domain = urlparse(attachment.url).netloc
+                if not bot.is_domain_whitelisted(domain):
+                    await message.delete()
+                    await message.channel.send(f"{message.author.mention}, 該附件 GIF 不在白名单中，不允许发送。")
+                    return
+
+    urls = [word for word in message.content.split() if word.startswith('http')]
+    for url in urls:
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc
+
+        if not bot.is_domain_whitelisted(domain):
+            await message.delete()
+            await message.channel.send(f"{message.author.mention}, 此链接不在白名单中。")
+            return
     
     await bot.process_commands(message)
 
@@ -478,33 +525,33 @@ async def ping(interaction: discord.Interaction):
     latency = bot.latency * 1000
     await interaction.response.send_message(f'当前延迟为 {latency:.2f} 毫秒')
 
-@bot.tree.command(name='add_whitelist', description='Add a URL to the whitelist')
+@bot.tree.command(name='add_whitelist', description='將URL加入白名單')
 async def add_whitelist(interaction: discord.Interaction, url: str):
     if interaction.user.guild_permissions.administrator:
         bot.whitelist.add(url)
         await bot.save_whitelist()
-        await interaction.response.send_message(f"{url} has been added to the whitelist.")
+        await interaction.response.send_message(f"{url} 已加入白名單。")
     else:
-        await interaction.response.send_message("You do not have permission to execute this command.")
+        await interaction.response.send_message("你沒有權限執行此指令。")
 
-@bot.tree.command(name='remove_whitelist', description='Remove a URL from the whitelist')
+@bot.tree.command(name='remove_whitelist', description='將URL從白名單移除')
 async def remove_whitelist(interaction: discord.Interaction, url: str):
     if interaction.user.guild_permissions.administrator:
         if url in bot.whitelist:
             bot.whitelist.remove(url)
             await bot.save_whitelist()
-            await interaction.response.send_message(f"{url} has been removed from the whitelist.")
+            await interaction.response.send_message(f"{url} 已從白名單移除。")
         else:
-            await interaction.response.send_message(f"{url} is not in the whitelist.")
+            await interaction.response.send_message(f"{url} 不在白名單中。")
     else:
-        await interaction.response.send_message("You do not have permission to execute this command.")
+        await interaction.response.send_message("你沒有權限執行此指令。")
 
-@bot.tree.command(name='show_whitelist', description='Show the whitelist')
+@bot.tree.command(name='show_whitelist', description='顯示白名單')
 async def show_whitelist(interaction: discord.Interaction):
     if bot.whitelist:
         await interaction.response.send_message("\n".join(bot.whitelist))
     else:
-        await interaction.response.send_message("The whitelist is empty.")
+        await interaction.response.send_message("白名單是空的。")
 
 @bot.tree.command(name="roll", description="擲骰子")
 async def roll(interaction: discord.Interaction, max_value: int = None):
