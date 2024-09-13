@@ -10,6 +10,7 @@ import sys
 import logging
 import aiohttp
 import aiofiles
+import re
 from discord.ext import commands
 from discord import app_commands
 from discord.ui import Button, View
@@ -53,6 +54,43 @@ class URLBot(commands.Bot):
 
 bot = URLBot(command_prefix='/', intents=intents)
 
+user_balance = {}
+
+def save_balance(data):
+    with open('balance.json', 'w') as f:
+        json.dump(data, f)
+
+def load_balance():
+    if os.path.exists('balance.json'):
+        with open('balance.json', 'r') as f:
+            return json.load(f)
+    return {}
+
+user_balance = load_balance()
+
+def load_dm_messages():
+    try:
+        with open('dm_messages.txt', 'r') as file:
+            return json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_dm_messages(dm_messages):
+    with open('dm_messages.txt', 'w') as file:
+        json.dump(dm_messages, file, indent=4)
+
+dm_messages = load_dm_messages()
+
+def load_trivia_questions():
+    with open('trivia_questions.json', 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data['questions']
+
+questions = load_trivia_questions()
+
+def get_random_question():
+    return random.choice(questions)
+
 def load_whitelist():
     try:
         with open('whitelist.json', 'r') as file:
@@ -91,111 +129,6 @@ async def check_url_safety(url: str) -> bool:
             return False
     return True
 
-user_balance = {}
-
-def save_balance(data):
-    with open('balance.json', 'w') as f:
-        json.dump(data, f)
-
-def load_balance():
-    if os.path.exists('balance.json'):
-        with open('balance.json', 'r') as f:
-            return json.load(f)
-    return {}
-
-user_balance = load_balance()
-
-def load_dm_messages():
-    try:
-        with open('dm_messages.txt', 'r') as file:
-            return json.load(file)
-    except (FileNotFoundError, json.JSONDecodeError):
-        return {}
-
-def save_dm_messages(dm_messages):
-    with open('dm_messages.txt', 'w') as file:
-        json.dump(dm_messages, file, indent=4)
-
-dm_messages = load_dm_messages()
-
-class URLBot(commands.Bot):
-    def __init__(self, command_prefix, intents):
-        super().__init__(command_prefix=command_prefix, intents=intents)
-        self.whitelist = set()
-        self.load_whitelist()
-
-    async def on_ready(self):
-        print(f'Logged in as {self.user}')
-
-    def load_whitelist(self):
-        try:
-            with open('whitelist.json', 'r') as file:
-                self.whitelist = set(json.load(file))
-        except (FileNotFoundError, json.JSONDecodeError):
-            self.whitelist = set()
-
-    async def save_whitelist(self):
-        async with aiofiles.open('whitelist.json', 'w') as file:
-            await file.write(json.dumps(list(self.whitelist)))
-
-    async def load_deleted_messages(self):
-        try:
-            async with aiofiles.open('deleted_messages.json', 'r') as file:
-                return json.loads(await file.read())
-        except (FileNotFoundError, json.JSONDecodeError):
-            return []
-
-    async def save_deleted_message(self, message_data):
-        deleted_messages = await self.load_deleted_messages()
-        deleted_messages.append(message_data)
-        async with aiofiles.open('deleted_messages.json', 'w') as file:
-            await file.write(json.dumps(deleted_messages, indent=4))
-
-    def is_domain_whitelisted(self, domain):
-        return any(domain.endswith(whitelisted) for whitelisted in self.whitelist)
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.webhook_id:
-            return
-        
-        urls = [word for word in message.content.split() if word.startswith('http')]
-        for url in urls:
-            parsed_url = urlparse(url)
-            domain = parsed_url.netloc
-
-            if not self.is_domain_whitelisted(domain):
-                try:
-                    print(f"Domain {domain} is not whitelisted.")
-                    
-                    message_data = {
-                        'author': str(message.author),
-                        'content': message.content,
-                        'timestamp': message.created_at.isoformat(),
-                        'channel': str(message.channel)
-                    }
-                    await self.save_deleted_message(message_data)
-                    await asyncio.sleep(2)
-                    await message.delete()
-                    await message.channel.send(f"{message.author.mention}, your message contains a link to a non-whitelisted website.")
-                except discord.NotFound:
-                    logging.info("Tried to delete a message that was not found.")
-                return
-            else:
-                print(f"Domain {domain} is whitelisted, not deleting.")
-
-        await self.process_commands(message)
-
-def load_trivia_questions():
-    with open('trivia_questions.json', 'r', encoding='utf-8') as f:
-        data = json.load(f)
-    return data['questions']
-
-questions = load_trivia_questions()
-
-def get_random_question():
-    return random.choice(questions)
-
 @bot.event
 async def on_message(message):
     global last_activity_time
@@ -208,7 +141,7 @@ async def on_message(message):
     
     content = message.content
     
-    if '關於幽幽子' in message.content.lower():
+    if '關於機器人幽幽子' in message.content.lower():
         await message.channel.send('幽幽子的創建時間是<t:1623245700:D>')
     
     if '關於製作者' in message.content.lower():
@@ -239,7 +172,7 @@ async def on_message(message):
         else:
             await message.channel.send("你無權重啓我 >_< ")
             return
-    
+
     if '幽幽子待機多久了' in message.content.lower():
         current_time = time.time()
         idle_seconds = current_time - last_activity_time
@@ -309,7 +242,7 @@ async def on_message(message):
     elif '生死' in content:
         await message.channel.send(get_random_response(life_death_responses))
     
-    elif '幽幽子' in content:
+    elif '關於幽幽子' in content:
         await message.channel.send(get_random_response(self_responses))
     
     elif '關於幽幽子的朋友' in content:
@@ -360,7 +293,7 @@ async def on_ready():
     
     await bot.change_presence(
         status=discord.Status.idle,
-        activity=discord.Activity(type=discord.ActivityType.playing, name='Undertale')
+        activity=discord.Activity(type=discord.ActivityType.playing, name='Honkai: Star Rail')
     )
     
     try:
@@ -721,24 +654,39 @@ class GiveawayModal(discord.ui.Modal, title="設定抽獎"):
 
     async def on_submit(self, interaction: discord.Interaction):
         content = self.giveaway_content.value
-        time = self.announcement_time.value
+        time_input = self.announcement_time.value
 
-        button = Button(label="點擊我參與抽獎", style=discord.ButtonStyle.green)
+        join_button = Button(label="點擊我參與抽獎", style=discord.ButtonStyle.green)
+        view_participants_button = Button(label="檢視參與者", style=discord.ButtonStyle.blurple)
 
-        async def button_callback(interaction: discord.Interaction):
+        async def join_button_callback(interaction: discord.Interaction):
             if interaction.user not in participants:
                 participants.append(interaction.user)
                 await interaction.response.send_message(f"{interaction.user.name} 已參加抽獎！", ephemeral=True)
             else:
                 await interaction.response.send_message("你已經參加過這次抽獎了！", ephemeral=True)
 
-        button.callback = button_callback
+        async def view_participants_callback(interaction: discord.Interaction):
+            if participants:
+                participants_list = "\n".join([user.name for user in participants])
+                await interaction.response.send_message(f"當前參與者：\n{participants_list}", ephemeral=True)
+            else:
+                await interaction.response.send_message("目前沒有參加者。", ephemeral=True)
+
+        join_button.callback = join_button_callback
+        view_participants_button.callback = view_participants_callback
+
         view = View()
-        view.add_item(button)
+        view.add_item(join_button)
+        view.add_item(view_participants_button)
 
-        await interaction.response.send_message(f"抽獎內容：{content}\n公佈時間：{time}", view=view)
+        total_seconds = parse_time(time_input)
+        announcement_timestamp = int(time.time()) + total_seconds
+        await interaction.response.send_message(
+            f"抽獎內容：{content}\n公佈時間：<t:{announcement_timestamp}:R>",
+            view=view
+        )
 
-        total_seconds = parse_time(time)
         await asyncio.sleep(total_seconds)
 
         if participants:
