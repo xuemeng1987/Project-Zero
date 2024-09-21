@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 from discord import app_commands
 import os
 import sys
@@ -7,32 +7,36 @@ import random
 import json
 from datetime import datetime, timedelta
 import asyncio
-from discord.ui import Button, View
+from discord.ui import Select, Button, View, Modal, TextInput
 import subprocess
 import time
 from dotenv import load_dotenv
 import logging
-import requests
-import re
-import aiohttp
-import base64
-import youtube_dl
-from discord import FFmpegPCMAudio
 from urllib.parse import urlparse
 import yaml
+from discord import SelectOption
+from discord import ui
 
 load_dotenv()
 
-TOKEN = os.getenv('DISCORD_TOKEN_MAIN_BOT')
+TOKEN = os.getenv('DISCORD_TOKEN_TEST_BOT')
 AUTHOR_ID = int(os.getenv('AUTHOR_ID'))
 LOG_FILE_PATH = "test_bot_feedback_log.txt"
 
 logging.basicConfig(level=logging.INFO)
+
+error_logger = logging.getLogger('discord')
+error_logger.setLevel(logging.ERROR)
+error_handler = logging.FileHandler(filename='error.log', encoding='utf-8', mode='w')
+error_handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+error_logger.addHandler(error_handler)
+
 intents = discord.Intents.default()
 intents.message_content = True
 intents.messages = True
 intents.members = True
 user_messages = {}
+participants = []
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 
@@ -50,6 +54,7 @@ async def on_ready():
         print(f'成功同步 {len(synced)} 个命令')
     except Exception as e:
         print(f'同步命令时出错: {e}')
+        error_logger.error(f'同步命令时出错: {e}', exc_info=True)
     
         last_activity_time = time.time()
 
@@ -99,60 +104,10 @@ async def on_message(message):
     
     await bot.process_commands(message)
 
-@bot.tree.command(name="time", description="获取最后活动时间")
-async def time_command(interaction: discord.Interaction):
-    current_time = time.time()
-    idle_seconds = current_time - last_activity_time
-    idle_minutes = idle_seconds / 60
-    await interaction.response.send_message(f'机器人上次活动时间是 {idle_minutes:.2f} 分钟前。')
-
-class FeedbackView(View):
-    def __init__(self, interaction: discord.Interaction, message: str):
-        super().__init__(timeout=60)
-        self.interaction = interaction
-        self.message = message
-    
-    async def log_feedback(self, error_code: str = None):
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        with open(LOG_FILE_PATH, "a", encoding="utf-8") as log_file:
-            log_file.write(
-                f"問題回報來自 {self.interaction.user} ({self.interaction.user.id}):\n"
-                f"錯誤訊息: {self.message}\n"
-                f"{'錯誤代號: ' + error_code if error_code else '類型: 其他問題'}\n"
-                f"回報時間: {current_time}\n\n"
-            )
-        response_message = (
-            f"感謝你的bug回饋（錯誤代號: {error_code}）。我們會檢查並修復你所提出的bug。謝謝！"
-            if error_code else
-            "感謝你的回饋，我們會檢查並處理你所提出的問題。謝謝！"
-        )
-        await self.interaction.edit_original_response(content=response_message, view=None)
-
-    @discord.ui.button(label="指令錯誤 (203)", style=discord.ButtonStyle.primary)
-    async def error_203(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.log_feedback("203")
-        self.stop()
-
-    @discord.ui.button(label="機器人訊息未回應 (372)", style=discord.ButtonStyle.primary)
-    async def error_372(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.log_feedback("372")
-        self.stop()
-
-    @discord.ui.button(label="指令未回應 (301)", style=discord.ButtonStyle.primary)
-    async def error_301(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.log_feedback("301")
-        self.stop()
-
-    @discord.ui.button(label="其他問題", style=discord.ButtonStyle.secondary)
-    async def other_issue(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.log_feedback()
-        self.stop()
-
-@bot.tree.command(name="feedback", description="bug回報")
-@app_commands.describe(message="回報bug")
-async def feedback(interaction: discord.Interaction, message: str):
-    view = FeedbackView(interaction, message)
-    await interaction.response.send_message("請選擇發生的錯誤代號:", view=view, ephemeral=True)
+@bot.event
+async def on_command_error(ctx, error):
+    error_logger.error(f'指令錯誤：{ctx.command} - {error}', exc_info=True)
+    await ctx.send('發生了錯誤，請檢查命令並重試。')
 
 @bot.tree.command(name="shutdown", description="关闭芙蘭")
 async def shutdown(interaction: discord.Interaction):
@@ -180,8 +135,13 @@ async def rpg_start(interaction: discord.Interaction):
         'mp': 20,
         'stamina': 10
     }
+    
+    if not os.path.exists('rpg-data'):
+        os.makedirs('rpg-data')
+    
     with open(f'rpg-data/{user_id}.yml', 'w') as file:
         yaml.dump(data, file)
+    
     await interaction.response.send_message("角色已初始化，开始你的冒险吧！")
 
 @bot.tree.command(name="rpg_backpack", description="开启背包")
@@ -190,7 +150,25 @@ async def rpg_backpack(interaction: discord.Interaction):
     try:
         with open(f'backpack/{user_id}.yml', 'r') as file:
             backpack = yaml.safe_load(file)
-        await interaction.response.send_message(f"你的背包内容: {backpack}")
+        
+        options = [SelectOption(label=item, description=f"数量: {backpack[item]['quantity']}")
+                   for item in backpack]
+
+        select = Select(placeholder="选择一个物品查看详情", options=options)
+
+        async def select_callback(interaction: discord.Interaction):
+            selected_item = select.values[0]
+            item_info = backpack[selected_item]
+            await interaction.response.send_message(f"你选择了: {selected_item}\n"
+                                                    f"数量: {item_info['quantity']}\n"
+                                                    f"描述: {item_info.get('description', '无描述')}")
+        
+        select.callback = select_callback
+        view = View()
+        view.add_item(select)
+
+        await interaction.response.send_message("请选择一个物品:", view=view)
+
     except FileNotFoundError:
         await interaction.response.send_message("你的背包是空的。")
 
@@ -249,7 +227,7 @@ class PurchaseModal(Modal):
         super().__init__(title="购买物品")
         self.item = item
         self.user_id = user_id
-        self.add_item(InputText(label="输入购买数量", placeholder="请输入数量", min_length=1, max_length=10))
+        self.add_item(TextInput(label="输入购买数量", placeholder="请输入数量", min_length=1, max_length=10))
 
     async def on_submit(self, interaction: discord.Interaction):
         quantity = int(self.children[0].value)
@@ -258,7 +236,7 @@ class PurchaseModal(Modal):
 
 @bot.tree.command(name="rpg_shop", description="前往商店")
 async def rpg_shop(interaction: discord.Interaction):
-    with open('shop_item.yml', 'r') as file:
+    with open('shop_item.yml', 'r', encoding='utf-8') as file:
         shop_items = yaml.safe_load(file)
     
     view = View()
@@ -293,23 +271,16 @@ async def rpg_adventure(interaction: discord.Interaction):
 
         logging.error(f"文件丟失: {missing_file}，請檢查源代碼中相關文件的存在性。")
 
-@bot.tree.command(name="rpg_playerbattle", description="与其他玩家决斗")
-async def rpg_playerbattle(interaction: discord.Interaction, opponent: discord.Member):
-    if interaction.user.id == opponent.id:
-        await interaction.response.send_message("你不能和自己决斗！")
-        return
-
-    await interaction.response.send_message(f"{interaction.user.mention} 已向 {opponent.mention} 發起挑戰！誰會獲得勝利？")
-
-@bot.tree.command(name="balance", description="查看比特币余额")
+@bot.tree.command(name="balance", description="查询你的幽灵币余额")
 async def balance(interaction: discord.Interaction):
     user_id = str(interaction.user.id)
     try:
-        with open(f'balance/{user_id}.yml', 'r') as file:
-            balance_data = yaml.safe_load(file)
-        await interaction.response.send_message(f"你的比特币余额为: {balance_data['bitcoin']} BTC")
+        with open('balance.yml', 'r') as file:
+            balances = yaml.safe_load(file)
+        
+        user_balance = balances.get(user_id, 0)
+        await interaction.response.send_message(f"你的幽灵币余额为: {user_balance}")
     except FileNotFoundError:
-        await interaction.response.send_message("你还没有余额记录。")
-
+        await interaction.response.send_message("balance.yml 文件未找到，无法查询余额。")
 
 bot.run(TOKEN)
