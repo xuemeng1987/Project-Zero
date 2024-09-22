@@ -131,17 +131,17 @@ async def rpg_start(interaction: discord.Interaction):
     data = {
         'lv': 1,
         'exp': 0,
-        'hp': 20,
-        'mp': 20,
-        'stamina': 10
+        'hp': 100,
+        'mp': 50,
+        'stamina': 50
     }
-    
+
     if not os.path.exists('rpg-data'):
         os.makedirs('rpg-data')
-    
+
     with open(f'rpg-data/{user_id}.yml', 'w') as file:
         yaml.dump(data, file)
-    
+
     await interaction.response.send_message("角色已初始化，开始你的冒险吧！")
 
 @bot.tree.command(name="rpg_backpack", description="开启背包")
@@ -232,7 +232,43 @@ class PurchaseModal(Modal):
     async def on_submit(self, interaction: discord.Interaction):
         quantity = int(self.children[0].value)
         total_cost = quantity * self.item['price']
-        await interaction.response.send_message(f"你购买了 {quantity} 个 {self.item['name']}，共花费 {total_cost} BTC")
+
+        try:
+            with open('balance.yml', 'r') as balance_file:
+                balances = yaml.safe_load(balance_file)
+        except FileNotFoundError:
+            balances = {}
+
+        user_balance = balances.get(str(self.user_id), 0)
+
+        if user_balance < total_cost:
+            await interaction.response.send_message(f"你的幽灵币余额不足，无法购买 {quantity} 个 {self.item['name']}。")
+            return
+
+        balances[str(self.user_id)] = user_balance - total_cost
+
+        with open('balance.yml', 'w') as balance_file:
+            yaml.dump(balances, balance_file)
+
+        backpack_path = f'backpack/{self.user_id}.yml'
+        try:
+            with open(backpack_path, 'r') as backpack_file:
+                backpack = yaml.safe_load(backpack_file)
+        except FileNotFoundError:
+            backpack = {}
+
+        if self.item['name'] in backpack:
+            backpack[self.item['name']]['quantity'] += quantity
+        else:
+            backpack[self.item['name']] = {
+                'quantity': quantity,
+                'description': self.item.get('description', '无描述')
+            }
+
+        with open(backpack_path, 'w') as backpack_file:
+            yaml.dump(backpack, backpack_file)
+
+        await interaction.response.send_message(f"你购买了 {quantity} 个 {self.item['name']}，共花费 {total_cost} 幽灵币。物品已添加到你的背包。")
 
 @bot.tree.command(name="rpg_shop", description="前往商店")
 async def rpg_shop(interaction: discord.Interaction):
@@ -283,4 +319,120 @@ async def balance(interaction: discord.Interaction):
     except FileNotFoundError:
         await interaction.response.send_message("balance.yml 文件未找到，无法查询余额。")
 
+class Battle:
+    def __init__(self, challenger_data, opponent_data):
+        self.challenger_data = challenger_data
+        self.opponent_data = opponent_data
+        self.turns = 30
+
+    def perform_attack(self, attacker, defender):
+        attack_value = random.randint(1, 10) * attacker['lv']
+        defender['hp'] -= attack_value
+        return attack_value
+
+    def is_over(self):
+        return self.challenger_data['hp'] <= 0 or self.opponent_data['hp'] <= 0 or self.turns == 0
+
+    def get_winner(self):
+        if self.challenger_data['hp'] > 0 and self.opponent_data['hp'] > 0:
+            return "平局"
+        if self.challenger_data['hp'] > 0:
+            return "挑战者"
+        return "对手"
+
+async def update_balance(user_id, amount):
+    try:
+        with open('balance.yml', 'r') as file:
+            balances = yaml.safe_load(file) or {}
+    except FileNotFoundError:
+        balances = {}
+
+    user_id_str = str(user_id)
+    balances[user_id_str] = balances.get(user_id_str, 0) + amount
+
+    with open('balance.yml', 'w') as file:
+        yaml.safe_dump(balances, file)
+
+async def update_battle_pool(player_id, user_id, bet):
+    try:
+        with open('battle_pool.yml', 'r') as file:
+            battle_data = yaml.safe_load(file) or {}
+    except FileNotFoundError:
+        battle_data = {}
+
+    player_id_str = str(player_id)
+    user_id_str = str(user_id)
+
+    if player_id_str not in battle_data:
+        battle_data[player_id_str] = {}
+
+    battle_data[player_id_str][user_id_str] = battle_data[player_id_str].get(user_id_str, 0) + bet
+
+    with open('battle_pool.yml', 'w') as file:
+        yaml.safe_dump(battle_data, file)
+
+async def refund_bets(player_a_id, player_b_id):
+    try:
+        with open('battle_pool.yml', 'r') as file:
+            battle_data = yaml.safe_load(file) or {}
+    except FileNotFoundError:
+        battle_data = {}
+
+    player_a_bets = battle_data.get(str(player_a_id), {})
+    for user_id, bet_amount in player_a_bets.items():
+        await update_balance(user_id, bet_amount)
+
+    player_b_bets = battle_data.get(str(player_b_id), {})
+    for user_id, bet_amount in player_b_bets.items():
+        await update_balance(user_id, bet_amount)
+
+    battle_data[str(player_a_id)] = {}
+    battle_data[str(player_b_id)] = {}
+
+    with open('battle_pool.yml', 'w') as file:
+        yaml.safe_dump(battle_data, file)
+
+@bot.tree.command(name="rpg_playerbattle", description="与其他玩家决斗")
+async def rpg_playerbattle(interaction: discord.Interaction, opponent: discord.Member):
+    if interaction.user.id == opponent.id:
+        await interaction.response.send_message("你不能和自己决斗！")
+        return
+
+    challenger_id = str(interaction.user.id)
+    opponent_id = str(opponent.id)
+
+    try:
+        with open(f'rpg-data/{challenger_id}.yml', 'r') as file:
+            challenger_data = yaml.safe_load(file)
+        with open(f'rpg-data/{opponent_id}.yml', 'r') as file:
+            opponent_data = yaml.safe_load(file)
+    except FileNotFoundError:
+        await interaction.response.send_message("请确保你和对手都已初始化角色数据。")
+        return
+
+    battle = Battle(challenger_data, opponent_data)
+    
+    current_turn = opponent_id
+
+    while not battle.is_over():
+        if current_turn == opponent_id:
+            attack_value = battle.perform_attack(opponent_data, challenger_data)
+            await interaction.channel.send(f"{opponent.mention} 攻击了 {interaction.user.mention}，造成了 {attack_value} 点伤害！")
+            current_turn = challenger_id
+        else:
+            attack_value = battle.perform_attack(challenger_data, opponent_data)
+            await interaction.channel.send(f"{interaction.user.mention} 攻击了 {opponent.mention}，造成了 {attack_value} 点伤害！")
+            current_turn = opponent_id
+
+        battle.turns -= 1
+
+    winner = battle.get_winner()
+    await interaction.channel.send(f"战斗结束！{winner} 胜利！")
+
+    with open(f'rpg-data/{challenger_id}.yml', 'w') as file:
+        yaml.safe_dump(challenger_data, file)
+    with open(f'rpg-data/{opponent_id}.yml', 'w') as file:
+        yaml.safe_dump(opponent_data, file)
+
 bot.run(TOKEN)
+
