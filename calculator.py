@@ -2,13 +2,13 @@ import math
 
 def perform_operation(operation, num1=None, num2=None, height=None, base=None):
     try:
-        if operation == 'add':
+        if operation == 'add': # 加法
             return f"公式：{num1} + {num2}\n結果：{num1 + num2}"
-        elif operation == 'subtract': # 加法
+        elif operation == 'subtract': # 減法
             return f"公式：{num1} - {num2}\n結果：{num1 - num2}"
-        elif operation == 'multiply': # 減法
+        elif operation == 'multiply': # 乘法
             return f"公式：{num1} * {num2}\n結果：{num1 * num2}"
-        elif operation == 'divide': # 乘法
+        elif operation == 'divide': # 除法
             if num2 == 0:
                 return "無法除以0！"
             return f"公式：{num1} ÷ {num2}\n結果：{num1 / num2}"
