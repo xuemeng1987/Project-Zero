@@ -22,6 +22,7 @@ import subprocess
 import psutil
 from home_work import parse_requirement
 import calculator
+import math
 
 load_dotenv()
 
@@ -925,10 +926,62 @@ async def help_work(interaction: discord.Interaction, requirement: str):
     """
     code = parse_requirement(requirement)
     await interaction.response.send_message(f"根據你的需求生成的代碼是:\n```python\n{code}\n```")
+class OperationSelect(Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(label='加法', value='add', description='進行加法運算'),
+            discord.SelectOption(label='減法', value='subtract', description='進行減法運算'),
+            discord.SelectOption(label='乘法', value='multiply', description='進行乘法運算'),
+            discord.SelectOption(label='除法', value='divide', description='進行除法運算'),
+            discord.SelectOption(label='次方', value='power', description='進行指數運算'),
+            discord.SelectOption(label='平方根', value='sqrt', description='計算平方根'),
+            discord.SelectOption(label='對數', value='log', description='計算對數'),
+            discord.SelectOption(label='正弦', value='sin', description='計算正弦'),
+            discord.SelectOption(label='餘弦', value='cos', description='計算餘弦'),
+            discord.SelectOption(label='正切', value='tan', description='計算正切'),
+            discord.SelectOption(label='圓柱體積', value='cylinder_volume', description='計算圓柱體積'),
+            discord.SelectOption(label='圓面積', value='circle_area', description='計算圓的面積'),
+            discord.SelectOption(label='三角形面積', value='triangle_area', description='計算三角形面積'),
+            discord.SelectOption(label='球體積', value='sphere_volume', description='計算球的體積'),
+        ]
+        super().__init__(placeholder='選擇一個運算', options=options)
 
-@bot.tree.command(name="calculate", description="Perform advanced arithmetic operations")
-async def calculate(interaction: discord.Interaction, operation: str, num1: float, num2: float = None):
-    result = calculator.perform_operation(operation, num1, num2)
-    await interaction.response.send_message(f'The result of {operation} is: {result}')
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(CalculatorModal(self.values[0]))
+
+def preprocess_input(value):
+    # Replace common math symbols and unit text with appropriate numeric values or strip them
+    if value is None:
+        return None
+    value = value.replace("cm", "")  # Remove 'cm'
+    value = value.replace("π", str(math.pi))  # Replace 'π' with its approximate value
+    return float(value)
+
+class CalculatorModal(Modal):
+    def __init__(self, operation):
+        super().__init__(title="輸入數字")
+        self.operation = operation
+        self.add_item(TextInput(label="數字 1", placeholder="輸入第一個數字", required=True))
+        self.add_item(TextInput(label="數字 2（可選）", placeholder="輸入第二個數字", required=False))
+        self.add_item(TextInput(label="高度（可選）", placeholder="與高度相關的運算", required=False))
+        self.add_item(TextInput(label="底（可選）", placeholder="與底相關的運算", required=False))
+
+    async def on_submit(self, interaction: discord.Interaction):
+        num1 = preprocess_input(self.children[0].value)
+        num2 = preprocess_input(self.children[1].value)
+        height = preprocess_input(self.children[2].value)
+        base = preprocess_input(self.children[3].value)
+
+        result = calculator.perform_operation(self.operation, num1, num2, height, base)
+        await interaction.response.send_message(f'運算結果：{result}')
+
+class CalculatorView(View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(OperationSelect())
+
+@bot.tree.command(name="calculate", description="進行高級數學運算")
+async def calculate(interaction: discord.Interaction):
+    await interaction.response.send_message("請選擇一個運算：", view=CalculatorView())
 
 bot.run(TOKEN)
