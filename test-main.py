@@ -926,6 +926,7 @@ async def help_work(interaction: discord.Interaction, requirement: str):
     """
     code = parse_requirement(requirement)
     await interaction.response.send_message(f"根據你的需求生成的代碼是:\n```python\n{code}\n```")
+
 class OperationSelect(Select):
     def __init__(self):
         options = [
@@ -943,6 +944,8 @@ class OperationSelect(Select):
             discord.SelectOption(label='圓面積', value='circle_area', description='計算圓的面積'),
             discord.SelectOption(label='三角形面積', value='triangle_area', description='計算三角形面積'),
             discord.SelectOption(label='球體積', value='sphere_volume', description='計算球的體積'),
+            discord.SelectOption(label='斜邊長度', value='hypotenuse', description='計算直角三角形的斜邊'),
+            discord.SelectOption(label='速度', value='speed', description='計算速度'),
         ]
         super().__init__(placeholder='選擇一個運算', options=options)
 
@@ -950,29 +953,39 @@ class OperationSelect(Select):
         await interaction.response.send_modal(CalculatorModal(self.values[0]))
 
 def preprocess_input(value):
-    # Replace common math symbols and unit text with appropriate numeric values or strip them
-    if value is None:
+    if value == '' or value is None:
         return None
-    value = value.replace("cm", "")  # Remove 'cm'
-    value = value.replace("π", str(math.pi))  # Replace 'π' with its approximate value
+    value = value.replace("cm", "")
+    value = value.replace("π", str(math.pi))
     return float(value)
 
 class CalculatorModal(Modal):
     def __init__(self, operation):
         super().__init__(title="輸入數字")
         self.operation = operation
+
         self.add_item(TextInput(label="數字 1", placeholder="輸入第一個數字", required=True))
-        self.add_item(TextInput(label="數字 2（可選）", placeholder="輸入第二個數字", required=False))
-        self.add_item(TextInput(label="高度（可選）", placeholder="與高度相關的運算", required=False))
-        self.add_item(TextInput(label="底（可選）", placeholder="與底相關的運算", required=False))
+        
+        if operation in ['add', 'subtract', 'multiply', 'divide', 'power', 'hypotenuse']:
+            self.add_item(TextInput(label="數字 2（可選）", placeholder="輸入第二個數字", required=False))
+
+        if operation in ['cylinder_volume', 'triangle_area']:
+            self.add_item(TextInput(label="高度（可選）", placeholder="與高度相關的運算", required=False))
+
+        if operation == 'triangle_area':
+            self.add_item(TextInput(label="底（可選）", placeholder="與底相關的運算", required=False))
+        
+        if operation == 'speed':
+            self.add_item(TextInput(label="時間", placeholder="輸入時間", required=True))
 
     async def on_submit(self, interaction: discord.Interaction):
         num1 = preprocess_input(self.children[0].value)
-        num2 = preprocess_input(self.children[1].value)
-        height = preprocess_input(self.children[2].value)
-        base = preprocess_input(self.children[3].value)
+        num2 = preprocess_input(self.children[1].value if len(self.children) > 1 else None)
+        height = preprocess_input(self.children[2].value if len(self.children) > 2 else None)
+        base = preprocess_input(self.children[3].value if len(self.children) > 3 else None)
+        time = preprocess_input(self.children[4].value if len(self.children) > 4 else None)
 
-        result = calculator.perform_operation(self.operation, num1, num2, height, base)
+        result = calculator.perform_operation(self.operation, num1, num2, height, base, time)
         await interaction.response.send_message(f'運算結果：{result}')
 
 class CalculatorView(View):
