@@ -61,6 +61,7 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
 
 ### **注意 Note**
 部分代码中涉及机器人关闭时的硬编码 **`AUTHOR_ID`**，可以在 **`.env`** 文件中设置您的实际 **`Discord ID`**。示例如下：
+
 In some parts where the bot is shut down, there is a hardcoded **`AUTHOR_ID`**. You can set your actual **`Discord ID`** in the **`.env`** file. The setup would look like this:
 ```env
 DISCORD_BOT_TOKEN=your_discord_bot_token
