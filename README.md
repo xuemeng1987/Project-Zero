@@ -69,6 +69,7 @@ AUTHOR_ID=your_discord_id
 ```
 ### **贡献 Contributing**
 欢迎任何贡献！请 fork 此仓库并创建 pull request 来提交您的更改。如果是重大更改，请先打开一个 issue 以讨论您想要更改的内容。
+
 Feel free to contribute to this project! Please fork the repository and create a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.
 
 ### **邀请机器人 Invite The Bot**
@@ -76,6 +77,7 @@ Feel free to contribute to this project! Please fork the repository and create a
 
 ### **联系 Contact**
 如果您有任何问题或需要帮助，可以通过以下方式联系我：
+
 If you have any questions or need assistance, you can contact me through:
 
 - Discord: Miya253
@@ -84,4 +86,5 @@ If you have any questions or need assistance, you can contact me through:
 
 ### **禁止抄袭声明 Anti-Plagiarism Notice**
 任何未经授权的代码抄袭、盗用或使用此开源代码的行为都将面临法律行动。
+
 Any unauthorized plagiarism, misappropriation, or misuse of this open-source code will result in legal action.
