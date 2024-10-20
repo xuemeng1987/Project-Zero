@@ -34,6 +34,7 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
 
 ## **即将推出的功能 Upcoming Features**
 *注意：RPG 地下城冒险功能仍在开发中，敬请期待。*
+
 *Note: The RPG Dungeon Adventure feature is still in development and will be available soon.*
 
 ## **安装 Installation**
