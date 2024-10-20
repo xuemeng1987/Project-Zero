@@ -59,7 +59,7 @@ Welcome to our Discord bot! This bot is designed to enhance your server with var
    python bot.py
    ```
 
-### **注意 Note**
+## **注意 Note**
 部分代码中涉及机器人关闭时的硬编码 **`AUTHOR_ID`**，可以在 **`.env`** 文件中设置您的实际 **`Discord ID`**。示例如下：
 
 In some parts where the bot is shut down, there is a hardcoded **`AUTHOR_ID`**. You can set your actual **`Discord ID`** in the **`.env`** file. The setup would look like this:
@@ -72,10 +72,10 @@ AUTHOR_ID=your_discord_id
 
 Feel free to contribute to this project! Please fork the repository and create a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.
 
-### **邀请机器人 Invite The Bot**
+## **邀请机器人 Invite The Bot**
 [yuyukobot](https://discord.com/oauth2/authorize?client_id=852046004550238258&permissions=15&scope=bot)
 
-### **联系 Contact**
+## **联系 Contact**
 如果您有任何问题或需要帮助，可以通过以下方式联系我：
 
 If you have any questions or need assistance, you can contact me through:
@@ -84,7 +84,7 @@ If you have any questions or need assistance, you can contact me through:
 - X: [@yuemeng62](https://x.com/yuemeng200)
 - GitHub: [xuemeng1987](https://github.com/xuemeng1987)
 
-### **禁止抄袭声明 Anti-Plagiarism Notice**
+## **禁止抄袭声明 Anti-Plagiarism Notice**
 任何未经授权的代码抄袭、盗用或使用此开源代码的行为都将面临法律行动。
 
 Any unauthorized plagiarism, misappropriation, or misuse of this open-source code will result in legal action.
