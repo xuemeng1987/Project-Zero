@@ -955,8 +955,24 @@ class OperationSelect(Select):
 def preprocess_input(value):
     if value == '' or value is None:
         return None
-    value = value.replace("cm", "")
+
+    value = value.lower()
+
+    if "h" in value:
+        value = value.replace("h", "")
+        return float(value) * 3600
+    
+    if "m" in value:
+        value = value.replace("m", "")
+        return float(value) * 60
+    
+    if "s" in value:
+        value = value.replace("s", "")
+        return float(value)
+    
     value = value.replace("π", str(math.pi))
+    
+    value = value.replace("cm", "")
     return float(value)
 
 class CalculatorModal(Modal):
@@ -979,14 +995,20 @@ class CalculatorModal(Modal):
             self.add_item(TextInput(label="時間", placeholder="輸入時間", required=True))
 
     async def on_submit(self, interaction: discord.Interaction):
-        num1 = preprocess_input(self.children[0].value)
-        num2 = preprocess_input(self.children[1].value if len(self.children) > 1 else None)
-        height = preprocess_input(self.children[2].value if len(self.children) > 2 else None)
-        base = preprocess_input(self.children[3].value if len(self.children) > 3 else None)
-        time = preprocess_input(self.children[4].value if len(self.children) > 4 else None)
+        try:
+            num1 = preprocess_input(self.children[0].value)
+            num2 = preprocess_input(self.children[1].value if len(self.children) > 1 else None)
+            height = preprocess_input(self.children[2].value if len(self.children) > 2 else None)
+            base = preprocess_input(self.children[3].value if len(self.children) > 3 else None)
+            time = preprocess_input(self.children[4].value if len(self.children) > 4 else None)
 
-        result = calculator.perform_operation(self.operation, num1, num2, height, base, time)
-        await interaction.response.send_message(f'運算結果：{result}')
+            result = calculator.perform_operation(self.operation, num1, num2, height, base, time)
+            await interaction.response.send_message(f'運算結果：{result}')
+
+        except ValueError:
+            await interaction.response.send_message(f"輸入的數據無效，請檢查後再試！", ephemeral=True)
+        except Exception as e:
+            await interaction.response.send_message(f"發生錯誤：{str(e)}", ephemeral=True)
 
 class CalculatorView(View):
     def __init__(self):
