@@ -102,7 +102,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     通过Discord消息发送提醒通知。
   - Integration with existing functions (like economy or RPG events).
     与现有功能集成（如经济系统或RPG事件）。
-- **Status / 状态**: Planned / 计划中。
+- **Status / 状态**: In progress (testing on test-main.py) / 进行中（测试中，文件：test-main.py）。
 
 ## 2. Math Operation Expansion / 数学运算扩展
 - **Description / 描述**: Enhance the calculator functionality with more operations and debugging.
