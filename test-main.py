@@ -23,6 +23,7 @@ import psutil
 from home_work import parse_requirement
 import calculator
 import math
+from calendar_module import add_event, remove_event, get_user_events, check_events, CalendarEvent
 
 load_dotenv()
 
@@ -103,7 +104,7 @@ async def on_ready():
     
     await bot.change_presence(
         status=discord.Status.idle,
-        activity=discord.Game(name="debug bot Mk.2 芙蘭")
+        activity = discord.Activity(type=discord.ActivityType.listening, name="No Dazzle, No Braek feat:Rappa")
     )
     
     try:
@@ -114,6 +115,7 @@ async def on_ready():
         error_logger.error(f'同步命令时出错: {e}', exc_info=True)
     
         last_activity_time = time.time()
+        check_events.start(bot)
 
 @bot.event
 async def on_message(message):
@@ -177,7 +179,8 @@ async def shutdown(interaction: discord.Interaction):
 @bot.tree.command(name="restart", description="重启芙蘭")
 async def restart(interaction: discord.Interaction):
     if interaction.user.id == AUTHOR_ID:
-        await interaction.response.send_message("重启中...")
+        await interaction.response.defer()
+        await interaction.followup.send("重启中...")
         os.execv(sys.executable, ['python'] + sys.argv)
     else:
         await interaction.response.send_message("你没有权限执行此操作。")
@@ -652,271 +655,6 @@ async def system_status(interaction: discord.Interaction):
 
     await interaction.followup.send(status_message)
 
-class ShopView(discord.ui.View):
-    def __init__(self, user_id, fish_list):
-        super().__init__(timeout=None)
-        self.user_id = user_id
-        self.fish_list = fish_list
-
-        sell_fish_button = discord.ui.Button(label="出售漁獲", style=discord.ButtonStyle.secondary, custom_id="sell_fish")
-        sell_fish_button.callback = self.show_sell_fish
-        self.add_item(sell_fish_button)
-
-        buy_gear_button = discord.ui.Button(label="購買漁具", style=discord.ButtonStyle.primary, custom_id="buy_gear")
-        buy_gear_button.callback = self.show_gear_shop
-        self.add_item(buy_gear_button)
-
-    async def show_sell_fish(self, interaction: discord.Interaction):
-        if not self.fish_list:
-            await interaction.response.send_message("🎣 你沒有漁獲可以出售。", ephemeral=True)
-            return
-
-        await interaction.response.edit_message(content="請選擇並出售你的漁獲：", view=SellFishView(self.user_id, self.fish_list))
-
-    async def show_gear_shop(self, interaction: discord.Interaction):
-        with open('fish_shop.yml', 'r', encoding='utf-8') as file:
-            shop_data = yaml.safe_load(file)
-
-        gear_list = shop_data['gear']['rod']
-        bait_list = shop_data['gear']['bait']
-
-        await interaction.response.edit_message(content="請選擇並購買漁具或魚餌：", view=BuyGearView(self.user_id, gear_list, bait_list))
-
-class SellView(discord.ui.View):
-    def __init__(self, user_id, selected_fish, fish_list):
-        super().__init__(timeout=None)
-        self.user_id = user_id
-        self.selected_fish = selected_fish
-        self.fish_list = fish_list
-
-    @discord.ui.button(label="確認出售", style=discord.ButtonStyle.danger)
-    async def confirm_sell(self, interaction: discord.Interaction, button: discord.ui.Button):
-        fish_to_sell = self.selected_fish
-        sell_price = self.calculate_fish_value(fish_to_sell)
-
-        with open('fishback.yml', 'r', encoding='utf-8') as file:
-            fish_back = yaml.safe_load(file)
-
-        user_data = fish_back[self.user_id]
-        user_data['balance'] += sell_price
-        user_data['caught_fish'].remove(fish_to_sell)
-
-        with open('fishback.yml', 'w', encoding='utf-8') as file:
-            yaml.dump(fish_back, file)
-
-        user_fish_list = fish_back[self.user_id]['caught_fish']
-        
-        if user_fish_list:
-            await interaction.response.edit_message(
-                content=f"✅ 你成功出售了 {fish_to_sell['name']}，獲得了 {sell_price} 幽靈幣！\n\n請選擇你想出售的其他漁獲：",
-                view=SellFishView(self.user_id, user_fish_list)
-            )
-        else:
-            await interaction.response.edit_message(
-                content=f"✅ 你成功出售了 {fish_to_sell['name']}，獲得了 {sell_price} 幽靈幣！\n\n你已經沒有其他漁獲可以出售了。",
-                view=None
-            )
-
-    def calculate_fish_value(self, fish):
-        """計算魚的價值"""
-        base_value = 50 if fish['rarity'] == 'common' else 100 if fish['rarity'] == 'uncommon' else 200 if fish['rarity'] == 'rare' else 500
-        return int(base_value * fish['size'])
-
-
-class SellFishView(discord.ui.View):
-    def __init__(self, user_id, fish_list):
-        super().__init__(timeout=None)
-        self.user_id = user_id
-        self.fish_list = fish_list
-        self.selected_fish = None
-
-        if self.fish_list:
-            options = [
-                discord.SelectOption(
-                    label=f"{fish['name']} - 大小: {fish['size']:.2f} 公斤", 
-                    description=f"估價: {self.calculate_fish_value(fish)} 幽靈幣"
-                )
-                for fish in self.fish_list
-            ]
-        else:
-            options = []
-
-        select = discord.ui.Select(
-            placeholder="選擇你想出售的魚",
-            options=options,
-            disabled=not bool(self.fish_list),
-            custom_id="fish_select"
-        )
-        select.callback = self.select_fish_to_sell
-        self.add_item(select)
-
-    async def select_fish_to_sell(self, interaction: discord.Interaction):
-        selected_fish_value = interaction.data['values'][0]
-        self.selected_fish = next(fish for fish in self.fish_list if f"{fish['name']} - 大小: {fish['size']:.2f} 公斤" == selected_fish_value)
-        
-        await interaction.response.edit_message(
-            content=f"你選擇了出售: {self.selected_fish['name']} ({self.selected_fish['size']} 公斤)", 
-            view=SellView(self.user_id, self.selected_fish, self.fish_list)
-        )
-
-    def calculate_fish_value(self, fish):
-        """計算魚的價值"""
-        base_value = 50 if fish['rarity'] == 'common' else 100 if fish['rarity'] == 'uncommon' else 200 if fish['rarity'] == 'rare' else 500
-        return int(base_value * fish['size'])
-
-
-class BuyGearView(discord.ui.View):
-    def __init__(self, user_id, gear_list, bait_list):
-        super().__init__(timeout=None)
-        self.user_id = user_id
-        self.gear_list = gear_list
-        self.bait_list = bait_list
-
-        gear_options = [
-            discord.SelectOption(label=f"{gear['name']} - 價格: {gear['price']} 幽靈幣")
-            for gear in self.gear_list.values()
-        ]
-        gear_select = discord.ui.Select(placeholder="選擇你想購買的漁具", options=gear_options, custom_id="gear_select")
-        gear_select.callback = self.buy_gear
-        self.add_item(gear_select)
-
-        bait_options = [
-            discord.SelectOption(label=f"{bait['name']} - 價格: {bait['price']} 幽靈幣")
-            for bait in self.bait_list.values()
-        ]
-        bait_select = discord.ui.Select(placeholder="選擇你想購買的魚餌", options=bait_options, custom_id="bait_select")
-        bait_select.callback = self.buy_bait
-        self.add_item(bait_select)
-
-    async def buy_gear(self, interaction: discord.Interaction):
-        selected_gear = interaction.data['values'][0]
-        gear = next(gear for gear in self.gear_list.values() if f"{gear['name']} - 價格: {gear['price']} 幽靈幣" == selected_gear)
-
-        await interaction.response.send_message(f"✅ 你成功購買了 {gear['name']}！", ephemeral=True)
-
-    async def buy_bait(self, interaction: discord.Interaction):
-        selected_bait = interaction.data['values'][0]
-        bait = next(bait for bait in self.bait_list.values() if f"{bait['name']} - 價格: {bait['price']} 幽靈幣" == selected_bait)
-
-        await interaction.response.send_message(f"✅ 你成功購買了 {bait['name']}！", ephemeral=True)
-
-
-@bot.tree.command(name="fish_shop", description="查看釣魚商店並購買或出售漁獲")
-async def fish_shop(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
-
-    with open('fishback.yml', 'r', encoding='utf-8') as file:
-        fish_back = yaml.safe_load(file)
-
-    user_fish_list = fish_back.get(user_id, {}).get('caught_fish', [])
-    
-    if not user_fish_list:
-        await interaction.response.send_message("🎣 你沒有漁獲可以出售。", ephemeral=True)
-        return
-
-    await interaction.response.send_message("🎣 歡迎來到釣魚商店！請選擇出售漁獲或購買漁具：", view=ShopView(user_id, user_fish_list))
-
-def catch_fish():
-    fish = random.choice(fish_data['fish'])
-    size = round(random.uniform(fish['min_size'], fish['max_size']), 2)
-    return {
-        'name': fish['name'],
-        'rarity': fish['rarity'],
-        'size': size
-    }
-
-class FishView(discord.ui.View):
-    def __init__(self, fish, user_id):
-        super().__init__(timeout=None)
-        self.fish = fish
-        self.user_id = user_id
-
-    @discord.ui.button(label="保存漁獲", style=discord.ButtonStyle.primary)
-    async def save_fish(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if str(interaction.user.id) != self.user_id:
-            await interaction.response.send_message("這不是你的魚竿，請使用 `/fish` 來開始你的釣魚。", ephemeral=True)
-            return
-
-        if not os.path.exists('fishiback.yml'):
-            with open('fishiback.yml', 'w', encoding='utf-8') as file:
-                yaml.dump({}, file)
-
-        with open('fishiback.yml', 'r', encoding='utf-8') as file:
-            fish_back = yaml.safe_load(file)
-
-        if self.user_id not in fish_back:
-            fish_back[self.user_id] = {'balance': 0, 'caught_fish': []}
-
-        user_data = fish_back[self.user_id]
-        user_data['caught_fish'].append(self.fish)
-
-        with open('fishiback.yml', 'w', encoding='utf-8') as file:
-            yaml.dump(fish_back, file)
-
-        await interaction.response.send_message(f"✅ 你成功保存了 {self.fish['name']} ({self.fish['size']} 公斤) 到你的漁獲列表中！", ephemeral=True)
-
-    @discord.ui.button(label="再釣多一次", style=discord.ButtonStyle.secondary)
-    async def fish_again(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if str(interaction.user.id) != self.user_id:
-            await interaction.response.send_message("這不是你的魚竿，請使用 `/fish` 來開始你的釣魚。", ephemeral=True)
-            return
-
-        if self.user_id in cooldowns and time.time() - cooldowns[self.user_id] < 5:
-            remaining_time = 5 - (time.time() - cooldowns[self.user_id])
-            await interaction.response.send_message(f"你需要等待 {remaining_time:.1f} 秒後才能再次釣魚。", ephemeral=True)
-            return
-
-        cooldowns[self.user_id] = time.time()
-
-        new_fish = catch_fish()
-        self.fish = new_fish
-        await interaction.response.send_message(
-            content=f"🎣 你捕到了一條 {new_fish['rarity']} 的 {new_fish['name']}！它的大小是 {new_fish['size']} 公斤！",
-            view=FishView(new_fish, self.user_id)
-        )
-
-@bot.tree.command(name="fish", description="進行一次釣魚")
-async def fish(interaction: discord.Interaction):
-    user_id = str(interaction.user.id)
-
-    if user_id in cooldowns and time.time() - cooldowns[user_id] < 5:
-        remaining_time = 5 - (time.time() - cooldowns[user_id])
-        await interaction.response.send_message(f"你需要等待 {remaining_time:.1f} 秒後才能再次釣魚。", ephemeral=True)
-        return
-
-    cooldowns[user_id] = time.time()
-
-    fish_caught = catch_fish()
-    await interaction.response.send_message(f"🎣 你捕到了一條 {fish_caught['rarity']} 的 {fish_caught['name']}！它的大小是 {fish_caught['size']} 公斤！",
-                                            view=FishView(fish_caught, user_id))
-
-@bot.tree.command(name="fish_back", description="查看你的漁獲")
-async def fish_back(interaction: discord.Interaction):
-    if not os.path.exists('fishiback.yml'):
-        with open('fishiback.yml', 'w', encoding='utf-8') as file:
-            yaml.dump({}, file)
-
-    with open('fishiback.yml', 'r', encoding='utf-8') as file:
-        fishing_data = yaml.safe_load(file)
-
-    if fishing_data is None:
-        fishing_data = {}
-
-    user_id = str(interaction.user.id)
-
-    if user_id in fishing_data and fishing_data[user_id]['caught_fish']:
-        caught_fish = fishing_data[user_id]['caught_fish']
-        
-        fish_list = "\n".join([f"| **{fish['name']}** | {fish['rarity']} | {fish['size']} 公斤 |" for fish in caught_fish])
-        
-        header = "| 魚名 | 稀有度 | 重量 |\n| --- | --- | --- |"
-        
-        message = f"🎣 **你的漁獲列表**:\n{header}\n{fish_list}"
-        
-        await interaction.response.send_message(message, ephemeral=True)
-    else:
-        await interaction.response.send_message("❌ 你還沒有捕到任何魚！", ephemeral=True)
-
 @bot.tree.command(name="help_work", description="解析需求並返回生成的Python代碼")
 async def help_work(interaction: discord.Interaction, requirement: str):
     """
@@ -958,21 +696,23 @@ def preprocess_input(value):
 
     value = value.lower()
 
-    if "h" in value:
+    if "h" in value:  # 小時轉換為秒
         value = value.replace("h", "")
         return float(value) * 3600
     
-    if "m" in value:
+    if "m" in value:  # 分鐘轉換為秒
         value = value.replace("m", "")
         return float(value) * 60
     
-    if "s" in value:
+    if "s" in value:  # 秒保持不變
         value = value.replace("s", "")
         return float(value)
     
+    # 處理圓周率符號
     value = value.replace("π", str(math.pi))
     
-    value = value.replace("cm", "")
+    # 處理長度單位，比如 cm 可以添加更多單位處理
+    value = value.replace("cm", "")  # 目前直接移除cm單位
     return float(value)
 
 class CalculatorModal(Modal):
@@ -982,9 +722,11 @@ class CalculatorModal(Modal):
 
         self.add_item(TextInput(label="數字 1", placeholder="輸入第一個數字", required=True))
         
+        # 根據不同的操作，要求輸入第二個數字
         if operation in ['add', 'subtract', 'multiply', 'divide', 'power', 'hypotenuse']:
             self.add_item(TextInput(label="數字 2（可選）", placeholder="輸入第二個數字", required=False))
 
+        # 特殊運算需要高度或底
         if operation in ['cylinder_volume', 'triangle_area']:
             self.add_item(TextInput(label="高度（可選）", placeholder="與高度相關的運算", required=False))
 
@@ -1018,5 +760,34 @@ class CalculatorView(View):
 @bot.tree.command(name="calculate", description="進行高級數學運算")
 async def calculate(interaction: discord.Interaction):
     await interaction.response.send_message("請選擇一個運算：", view=CalculatorView())
+
+@bot.tree.command(name="create_event", description="創建一個新的事件")
+@app_commands.describe(event_name="事件名稱", event_date="事件日期 (YYYY-MM-DD)", event_time="事件時間 (HH:MM)", reminder_time="提醒時間 (分鐘)", description="事件描述")
+async def create_event(interaction: discord.Interaction, event_name: str, event_date: str, event_time: str, reminder_time: int = 10, description: str = ""):
+    try:
+        event_date_time = datetime.datetime.strptime(f"{event_date} {event_time}", "%Y-%m-%d %H:%M")
+        user_id = interaction.user.id
+        new_event = CalendarEvent(event_name, event_date_time, user_id, description, reminder_time)
+        add_event(new_event)
+        await interaction.response.send_message(f"事件 `{event_name}` 已創建，將在 {event_date_time} 開始！")
+    except ValueError:
+        await interaction.response.send_message("日期或時間格式不正確，請使用 `YYYY-MM-DD` 和 `HH:MM` 格式。")
+
+@bot.tree.command(name="delete_event", description="刪除一個已創建的事件")
+@app_commands.describe(event_name="事件名稱")
+async def delete_event(interaction: discord.Interaction, event_name: str):
+    user_id = interaction.user.id
+    remove_event(event_name, user_id)
+    await interaction.response.send_message(f"事件 `{event_name}` 已刪除。")
+
+@bot.tree.command(name="list_events", description="列出所有已創建的事件")
+async def list_events(interaction: discord.Interaction):
+    user_id = interaction.user.id
+    user_events = get_user_events(user_id)
+    if user_events:
+        events_details = "\n".join([f"{event.event_name}: {event.event_date_time} (提醒: {event.reminder_time} 分鐘前)" for event in user_events])
+        await interaction.response.send_message(f"您的事件:\n{events_details}")
+    else:
+        await interaction.response.send_message("您目前沒有設置任何事件。")
 
 bot.run(TOKEN)
