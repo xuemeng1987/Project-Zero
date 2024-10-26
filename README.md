@@ -132,7 +132,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     网站验证。
   - Automatic moderation or message handling.
     自动管理或消息处理。
-- **Status / 状态**: Under consideration (site verification causing issues) / 考虑中（网站验证存在问题）。
+- **Status / 状态**: Deprecated / 已廢棄。
 
 ## 5. Economy System Leaderboard and Stats Display / 经济系统排行榜和统计显示
 - **Description / 描述**: Introduce a leaderboard for economy-based interactions and stats display.
