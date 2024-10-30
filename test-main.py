@@ -1,4 +1,3 @@
-from turtle import title
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -20,10 +19,10 @@ from discord import SelectOption
 from discord import ui
 import subprocess
 import psutil
-from home_work import parse_requirement
 import calculator
 import math
 from calendar_module import add_event, remove_event, get_user_events, check_events, CalendarEvent
+from omikuji import draw_lots
 
 load_dotenv()
 
@@ -98,6 +97,33 @@ def reset_daily_limit(user_id):
         daily_trick_count[user_id] = 0
         daily_reset_time[user_id] = now
 
+def load_cooldown_data(cooldown_file):
+    try:
+        with open(cooldown_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def save_cooldown_data(data, cooldown_file):
+    with open(cooldown_file, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=4)
+
+def is_on_cooldown(user_id, cooldown_file, cooldown_hours):
+    cooldown_data = load_cooldown_data(cooldown_file)
+    if str(user_id) in cooldown_data:
+        last_used = datetime.fromisoformat(cooldown_data[str(user_id)])
+        if datetime.now() - last_used < timedelta(hours=cooldown_hours):
+            remaining = timedelta(hours=cooldown_hours) - (datetime.now() - last_used)
+            hours, remainder = divmod(remaining.seconds, 3600)
+            minutes = remainder // 60
+            return True, f"{hours} 小時 {minutes} 分鐘"
+    return False, None
+
+def update_cooldown(user_id, cooldown_file):
+    cooldown_data = load_cooldown_data(cooldown_file)
+    cooldown_data[str(user_id)] = datetime.now().isoformat()
+    save_cooldown_data(cooldown_data, cooldown_file)
+
 @bot.event
 async def on_ready():
     print(f'已登入 {bot.user.name}')
@@ -160,6 +186,10 @@ async def on_message(message):
             await bot.close()
         else:
             await message.channel.send("你無權重啓我 >_<")
+    
+    if "抽籤" in message.content:
+        result = draw_lots()
+        await message.channel.send(f"你抽出的御神籤的結果是:\n{result}")
     
     await bot.process_commands(message)
 
@@ -789,5 +819,21 @@ async def list_events(interaction: discord.Interaction):
         await interaction.response.send_message(f"您的事件:\n{events_details}")
     else:
         await interaction.response.send_message("您目前沒有設置任何事件。")
+
+@bot.tree.command(name="draw_lots", description="抽取御神抽籤")
+async def draw_lots_command(interaction: discord.Interaction):
+    cooldown_file = "cooldowns.json"
+    cooldown_hours = 24
+    user_id = interaction.user.id
+    
+    on_cooldown, remaining_time = is_on_cooldown(user_id, cooldown_file, cooldown_hours)
+    
+    if on_cooldown:
+        await interaction.response.send_message(f"你還在冷卻中，剩餘時間：{remaining_time}", ephemeral=True)
+    else:
+        await interaction.response.defer()
+        result = draw_lots()
+        await interaction.followup.send(f"你抽出的御神籤的結果是:\n{result}")
+        update_cooldown(user_id, cooldown_file)
 
 bot.run(TOKEN)
