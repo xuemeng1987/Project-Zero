@@ -1,0 +1,180 @@
+fish:
+  - name: "金魚"
+    rarity: "common"
+    min_size: 0.1
+    max_size: 0.3
+
+  - name: "鯉魚"
+    rarity: "common"
+    min_size: 0.5
+    max_size: 1.2
+
+  - name: "黑鱸魚"
+    rarity: "uncommon"
+    min_size: 1.0
+    max_size: 2.5
+
+  - name: "河豚"
+    rarity: "uncommon"
+    min_size: 0.3
+    max_size: 1.0
+
+  - name: "虹鱒魚"
+    rarity: "uncommon"
+    min_size: 0.5
+    max_size: 1.5
+
+  - name: "鮭魚"
+    rarity: "rare"
+    min_size: 1.0
+    max_size: 3.5
+
+  - name: "藍鰭金槍魚"
+    rarity: "rare"
+    min_size: 2.0
+    max_size: 5.0
+
+  - name: "鯨魚"
+    rarity: "legendary"
+    min_size: 10.0
+    max_size: 20.0
+
+  - name: "巨型石斑魚"
+    rarity: "legendary"
+    min_size: 3.0
+    max_size: 6.0
+
+  - name: "龍王鯛"
+    rarity: "legendary"
+    min_size: 5.0
+    max_size: 10.0
+
+  - name: "電鰻"
+    rarity: "rare"
+    min_size: 1.5
+    max_size: 2.5
+
+  - name: "大口黑鱸"
+    rarity: "uncommon"
+    min_size: 0.8
+    max_size: 2.0
+
+  - name: "大白鯊"
+    rarity: "legendary"
+    min_size: 4.0
+    max_size: 7.0
+
+  - name: "劍魚"
+    rarity: "rare"
+    min_size: 2.0
+    max_size: 4.5
+
+  - name: "紅點鮭"
+    rarity: "uncommon"
+    min_size: 0.6
+    max_size: 1.8
+
+  - name: "七彩神仙魚"
+    rarity: "common"
+    min_size: 0.1
+    max_size: 0.5
+
+  - name: "巨型魟魚"
+    rarity: "legendary"
+    min_size: 3.0
+    max_size: 5.5
+
+  - name: "綠翅魚"
+    rarity: "rare"
+    min_size: 0.5
+    max_size: 1.2
+
+  - name: "火焰鱒魚"
+    rarity: "uncommon"
+    min_size: 0.7
+    max_size: 1.5
+
+  - name: "帝王蝶魚"
+    rarity: "common"
+    min_size: 0.2
+    max_size: 0.6
+
+  - name: "海馬"
+    rarity: "common"
+    min_size: 0.1
+    max_size: 0.3
+
+  - name: "石斑魚"
+    rarity: "uncommon"
+    min_size: 0.5
+    max_size: 1.0
+
+  - name: "槍魚"
+    rarity: "rare"
+    min_size: 1.0
+    max_size: 3.0
+
+  - name: "龍蝦"
+    rarity: "uncommon"
+    min_size: 0.3
+    max_size: 0.8
+
+  - name: "虎鯨"
+    rarity: "legendary"
+    min_size: 5.0
+    max_size: 9.0
+
+  - name: "飛魚"
+    rarity: "rare"
+    min_size: 0.5
+    max_size: 1.0
+
+  - name: "章魚"
+    rarity: "uncommon"
+    min_size: 0.5
+    max_size: 2.0
+
+  - name: "鯊魚"
+    rarity: "legendary"
+    min_size: 3.0
+    max_size: 6.0
+
+  - name: "石頭魚"
+    rarity: "uncommon"
+    min_size: 0.3
+    max_size: 1.0
+
+  - name: "藍魔鬼魚"
+    rarity: "legendary"
+    min_size: 2.0
+    max_size: 4.0
+
+  - name: "水母"
+    rarity: "common"
+    min_size: 0.2
+    max_size: 0.5
+
+  - name: "燈籠魚"
+    rarity: "rare"
+    min_size: 0.3
+    max_size: 1.0
+
+  - name: "琵琶魚"
+    rarity: "rare"
+    min_size: 0.4
+    max_size: 1.2
+
+  - name: "大眼金槍魚"
+    rarity: "legendary"
+    min_size: 3.0
+    max_size: 5.0
+
+  - name: "巨型魷魚"
+    rarity: "legendary"
+    min_size: 5.0
+    max_size: 8.0
+
+  - name: "幽靈魚"
+    rarity: "legendary"
+    min_size: 1.0
+    max_size: 2.0
