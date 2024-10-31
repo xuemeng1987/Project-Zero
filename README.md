@@ -84,7 +84,7 @@ If you have any questions or need assistance, you can contact me through:
 - Discord: Miya253
 - X: [@yuemeng62](https://x.com/yuemeng200)
 - GitHub: [xuemeng1987](https://github.com/xuemeng1987)
-- Zero [Project Blog](https://xuemeng1987.github.io/Project-Zero-Personal-Blog/)
+- [Zero Project Blog](https://xuemeng1987.github.io/Project-Zero-Personal-Blog/)
 
 ## **禁止抄袭声明 Anti-Plagiarism Notice**
 任何未经授权的代码抄袭、盗用或使用此开源代码的行为都将面临法律行动。
