@@ -19,10 +19,12 @@ from discord import SelectOption
 from discord import ui
 import subprocess
 import psutil
+from home_work import parse_requirement
 import calculator
 import math
 from calendar_module import add_event, remove_event, get_user_events, check_events, CalendarEvent
 from omikuji import draw_lots
+import re 
 
 load_dotenv()
 
@@ -124,6 +126,24 @@ def update_cooldown(user_id, cooldown_file):
     cooldown_data[str(user_id)] = datetime.now().isoformat()
     save_cooldown_data(cooldown_data, cooldown_file)
 
+def load_config():
+    if not os.path.exists("config.yml"):
+        default_config = {
+            "mention_counts": {}
+        }
+        save_config(default_config)
+        return default_config
+
+    with open("config.yml", "r", encoding="utf-8") as file:
+        return yaml.safe_load(file)
+
+def save_config(config):
+    with open("config.yml", "w", encoding="utf-8") as file:
+        yaml.safe_dump(config, file)
+
+config = load_config()
+mention_counts = config.get("mention_counts", {})
+
 @bot.event
 async def on_ready():
     print(f'已登入 {bot.user.name}')
@@ -148,30 +168,28 @@ async def on_message(message):
     global last_activity_time
     last_activity_time = time.time()
     user_id = str(message.author.id)
-    
+    guild_id = str(message.guild.id)
     if message.author == bot.user:
         return
 
     content_lower = message.content.lower()
-
     if '關於芙蘭' in content_lower:
         await message.channel.send('芙蘭的創建時間是<t:1722340500:D>')
-    
-    if '芙蘭閑置多久了' in content_lower:
-        idle_seconds = time.time() - last_activity_time
-        idle_minutes = idle_seconds / 60
+
+    elif '芙蘭閑置多久了' in content_lower:
+        idle_minutes = (time.time() - last_activity_time) / 60
         await message.channel.send(f'芙蘭目前閑置時間為 {idle_minutes:.2f} 分鐘。')
-    
-    if '關於製作者' in content_lower:
+
+    elif '關於製作者' in content_lower:
         await message.channel.send('製作者是個很好的人 雖然看上去有點怪怪的')
-    
-    if '芙蘭的生日' in content_lower:
+
+    elif '芙蘭的生日' in content_lower:
         await message.channel.send('機器人芙蘭的生日在<t:1722340500:D>')
 
-    if '熊貓' in content_lower:
+    elif '熊貓' in content_lower:
         await message.channel.send('Miya253:幹嘛 我現在在修著幽幽子 有事情的話請DM我 謝謝')
-    
-    if message.content.startswith('關閉芙蘭'):
+
+    elif message.content.startswith('關閉芙蘭'):
         if message.author.id == AUTHOR_ID:
             await message.channel.send("正在關閉...")
             await asyncio.sleep(5)
@@ -186,17 +204,50 @@ async def on_message(message):
             await bot.close()
         else:
             await message.channel.send("你無權重啓我 >_<")
-    
-    if "抽籤" in message.content:
+
+    elif "抽籤" in message.content:
         result = draw_lots()
         await message.channel.send(f"你抽出的御神籤的結果是:\n{result}")
+        
+    if message.author == message.guild.owner or any(role.permissions.administrator for role in message.author.roles):
+        await bot.process_commands(message)
+        return
+    
+    if message.author.bot and ("@everyone" in message.content or "@here" in message.content):
+        try:
+            await message.channel.send(f"{message.author.mention} 被檢測到濫用全體標註，將被直接踢出或封禁。")
+            await message.author.ban(reason="濫用全體標註")
+        except discord.Forbidden:
+            await message.channel.send(f"無法封禁 {message.author.mention}，請求管理員提高機器人權限。")
+        return
+    
+    if "@everyone" in message.content or "@here" in message.content:
+        if user_id not in mention_counts:
+            mention_counts[user_id] = 1
+        else:
+            mention_counts[user_id] += 1
+
+        if mention_counts[user_id] == 1:
+            await message.channel.send(f"{message.author.mention} 請勿使用全體標註！這是您的第一次警告。")
+
+        elif mention_counts[user_id] == 2:
+            await message.channel.send(f"{message.author.mention} 已經多次使用全體標註，將被踢出伺服器。")
+            try:
+                await message.author.kick(reason="多次使用全體標註")
+            except discord.Forbidden:
+                await message.channel.send(f"無法踢出 {message.author.mention}，請求管理員提高機器人權限。")
+
+        elif mention_counts[user_id] >= 3:
+            await message.channel.send(f"{message.author.mention} 已被永久封禁。")
+            try:
+                await message.author.ban(reason="多次使用全體標註")
+            except discord.Forbidden:
+                await message.channel.send(f"無法封禁 {message.author.mention}，請求管理員提高機器人權限。")
+                
+        await message.delete()
+        return
     
     await bot.process_commands(message)
-
-@bot.event
-async def on_command_error(ctx, error):
-    error_logger.error(f'指令錯誤：{ctx.command} - {error}', exc_info=True)
-    await ctx.send('發生了錯誤，請檢查命令並重試。')
 
 @bot.tree.command(name="shutdown", description="关闭芙蘭")
 async def shutdown(interaction: discord.Interaction):
@@ -823,7 +874,7 @@ async def list_events(interaction: discord.Interaction):
 @bot.tree.command(name="draw_lots", description="抽取御神抽籤")
 async def draw_lots_command(interaction: discord.Interaction):
     cooldown_file = "cooldowns.json"
-    cooldown_hours = 24
+    cooldown_hours = 5
     user_id = interaction.user.id
     
     on_cooldown, remaining_time = is_on_cooldown(user_id, cooldown_file, cooldown_hours)
