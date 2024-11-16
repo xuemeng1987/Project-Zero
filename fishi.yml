@@ -178,3 +178,138 @@ fish:
     rarity: "legendary"
     min_size: 1.0
     max_size: 2.0
+
+  - name: "神秘螃蟹"
+    rarity: "legendary"
+    min_size: 20.0
+    max_size: 50.0
+
+  - name: "黑暗巨鯊"
+    rarity: "legendary"
+    min_size: 7.0
+    max_size: 12.0
+
+  - name: "冰霜龍魚"
+    rarity: "legendary"
+    min_size: 3.0
+    max_size: 8.0
+
+  - name: "雷霆鯨"
+    rarity: "legendary"
+    min_size: 5.0
+    max_size: 15.0
+
+  - name: "水龍"
+    rarity: "legendary"
+    min_size: 10.0
+    max_size: 20.0
+
+  - name: "魔幻金槍魚"
+    rarity: "legendary"
+    min_size: 4.0
+    max_size: 9.0
+
+  - name: "天幕鯨"
+    rarity: "legendary"
+    min_size: 8.0
+    max_size: 16.0
+
+  - name: "火焰巨龍"
+    rarity: "legendary"
+    min_size: 15.0
+    max_size: 30.0
+
+  - name: "銀翼鯨"
+    rarity: "legendary"
+    min_size: 6.0
+    max_size: 12.0
+
+  - name: "古代恐龍鯊"
+    rarity: "legendary"
+    min_size: 10.0
+    max_size: 25.0
+
+  - name: "虛無巨鯊"
+    rarity: "legendary"
+    min_size: 9.0
+    max_size: 18.0
+
+  - name: "狂風巨鯊"
+    rarity: "legendary"
+    min_size: 8.5
+    max_size: 14.0
+
+  - name: "深海魔王"
+    rarity: "legendary"
+    min_size: 12.0
+    max_size: 22.0
+
+  - name: "地心巨鯨"
+    rarity: "legendary"
+    min_size: 11.0
+    max_size: 20.0
+
+  - name: "隕石巨魚"
+    rarity: "legendary"
+    min_size: 13.0
+    max_size: 25.0
+
+  - name: "暗黑巨怪魚"
+    rarity: "legendary"
+    min_size: 5.5
+    max_size: 11.0
+
+  - name: "永夜巨蝦"
+    rarity: "legendary"
+    min_size: 4.5
+    max_size: 9.5
+
+  - name: "光明巨鱸"
+    rarity: "legendary"
+    min_size: 7.5
+    max_size: 13.0
+
+  - name: "深海巨龍"
+    rarity: "legendary"
+    min_size: 8.0
+    max_size: 15.5
+
+  - name: "黑暗海妖"
+    rarity: "legendary"
+    min_size: 6.0
+    max_size: 12.0
+
+  - name: "冰封巨鯊"
+    rarity: "legendary"
+    min_size: 5.0
+    max_size: 11.0
+
+  - name: "火山巨魚"
+    rarity: "legendary"
+    min_size: 9.0
+    max_size: 18.0
+
+  - name: "星辰巨鱗"
+    rarity: "legendary"
+    min_size: 10.0
+    max_size: 20.0
+
+  - name: "時空巨鯊"
+    rarity: "legendary"
+    min_size: 10.5
+    max_size: 19.5
+
+  - name: "雷暴巨鯽"
+    rarity: "legendary"
+    min_size: 7.0
+    max_size: 15.0
+
+  - name: "天使巨魚"
+    rarity: "legendary"
+    min_size: 6.5
+    max_size: 14.5
+
+  - name: "幽靈巨魚"
+    rarity: "legendary"
+    min_size: 4.0
+    max_size: 8.0
