@@ -1,5 +1,15 @@
 import random
 
+fortune_colors = {
+    "大吉": 0xFFD700,
+    "中吉": 0x00FF00,
+    "小吉": 0xADD8E6,
+    "吉": 0x1E90FF,
+    "末吉": 0xFFA500,
+    "凶": 0xFF4500,
+    "大凶": 0x8B0000,
+}
+
 omikuji_fortunes = [
     {
         "運勢": "大吉",
@@ -42,15 +52,16 @@ omikuji_fortunes = [
         "愛情": "愛情關係可能破裂，謹慎處理。",
         "事業": "事業低潮，不宜大動作。",
         "健康": "健康欠佳，需及時休養。",
-    }
+    },
 ]
 
 def draw_lots():
     fortune = random.choice(omikuji_fortunes)
-    result = (
+    result_text = (
         f"運勢: {fortune['運勢']}\n"
         f"愛情: {fortune['愛情']}\n"
         f"事業: {fortune['事業']}\n"
         f"健康: {fortune['健康']}"
     )
-    return result
+    color = fortune_colors[fortune["運勢"]]
+    return result_text, color
