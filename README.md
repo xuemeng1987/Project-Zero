@@ -142,7 +142,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     显示最高收入者和交易记录。
   - Detailed user statistics (work, balance, etc.).
     用户详细统计（工作、余额等）。
-- **Status / 状态**: Planned / 计划中。
+- **Status / 状态**: accomplish / 已完成
 
 ## 6. RPG Mini-Game Debugging / RPG小游戏调试
 - **Description / 描述**: Continue debugging and improving the RPG mini-game for entertainment purposes.
