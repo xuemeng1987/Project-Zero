@@ -20,7 +20,8 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 from urllib.parse import urlparse
 from responses import food_responses, death_responses, life_death_responses, self_responses, friend_responses, maid_responses, mistress_responses, reimu_responses, get_random_response
-
+from filelock import FileLock
+from omnikuji import draw_lots
 load_dotenv()
 
 TOKEN = os.getenv('DISCORD_TOKEN_MAIN_BOT')
@@ -31,7 +32,7 @@ logging.basicConfig(level=logging.INFO)
 
 error_logger = logging.getLogger('discord')
 error_logger.setLevel(logging.ERROR)
-error_handler = logging.FileHandler(filename='error.log', encoding='utf-8', mode='w')
+error_handler = logging.FileHandler(filename='error_main.log', encoding='utf-8', mode='w')
 error_handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 error_logger.addHandler(error_handler)
 logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %(message)s')
