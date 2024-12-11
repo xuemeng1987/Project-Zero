@@ -1,98 +1,100 @@
-# Discord Bot
+# 3 2 1 2 3
 
-欢迎使用我们的 Discord 机器人！此机器人旨在通过多种功能和指令增强您的服务器体验。以下是现有指令和功能的概览。
+## discord機器人
+名字:幽幽子
+- 使用的語言
+  - python
+- 使用的庫
+  - pycord - 主要指令運行庫
+  - json - 數據資料儲存(次要)
+  - yaml - 資料數據儲存(主要)
+  - FileLock - 保護儲存數據文件
+  - urllib.parse - 動態機器人邀請鏈接
+  - dotenv - 變量環境token與discord user id 儲存
+  - datetime - 獲取時間
+  - discord.ui - ui系統(指令ui)
+  - discord.ext - 指令
+  - random - 隨機事件選取
 
-Welcome to our Discord bot! This bot is designed to enhance your server with various functionalities and commands. Below is an overview of the available commands and features.
+## 指令？
 
-## **功能 Features**
+通用指令 - 只限於普通用戶
+> help - 獲取機器人全部指令
+>
+> ping - 獲取機器人與api之間的延遲
+>
+> roll - 簡單的丟骰子(有自定義參數可用)
+>
+> invite - 生成邀請機器人鏈接
+>
+> about-me - 關於我與機器人之間的訊息
+>
+> rpg_start - 目前已延期 有可能會廢置
+>
+> time - 可以獲取機器人待機多長時間(待機時間提供者"死亡協會")
+>
+> server_info - 可以獲取伺服器的資訊
+>
+> user_info - 可以獲取用戶的資訊
+>
+> feedback - 可以向我回報問題
+>
+> trivia - 開啓動漫的問答挑戰
+>
+> draw_lots - 抽籤(并非與日本傳説的御神籤)
 
-### **通用指令 General Commands**
-- **`/invite`**: 生成机器人的邀请链接。 / Generates an invite link for the bot.
-- **`/ping`**: 显示机器人的当前延迟。 / Shows the bot's current latency.
-- **`/time`**: 显示机器人的最后活动时间。 / Displays the bot's last activity time.
-- **`/trivia`**: 启动一个动漫问答挑战。 / Start a Trivia Quiz Challenge (Anime).
+管理員指令 - 只限於擁有管理員權限身份組
+> ban - 封禁該用戶
+>
+> kick - 踢出該用戶
+>
+> timeout - 禁言該用戶
+>
+> untimeout - 解除禁言的用戶
+>
+> system_status - 可以查看機器人使用的資源情況
+>
+> clear - 清除訊息(不知道是什麽東西在搞到 還在修著)
+>
+> start_giveaway - 啓動一個抽獎活動
 
-### **经济系统 Economy System**
-- **`/balance`**: 查看您的幽灵币余额。 / Check your Ghost Coin balance.
-- **`/work`**: 通过工作赚取幽灵币。 / Earn Ghost Coin by working.
-- **`/pay`**: 向其他用户转账幽灵币。 / Transfer Ghost Coin to another user.
-- **`/addmoney`**: 向用户账户添加幽灵币（仅限管理员）。 / Add Ghost Coin to a user’s account (admin only).
-- **`/removemoney`**: 从用户账户移除幽灵币（仅限管理员）。 / Remove Ghost Coin from a user’s account (admin only).
+α作者使用的指令
+> shutdown
+>
+> restart
+>
+> addmoney
+>
+> removemoney
 
-### **管理员指令 Admin Commands**
-- **`/ban`**: 禁止用户进入服务器（仅限管理员）。 / Bans a user from the server (admin only).
-- **`/kick`**: 踢出服务器用户（仅限管理员）。 / Kicks a user from the server (admin only).
-- **`/clear`**: 清理频道中的消息（仅限管理员）。 / Clears messages from the channel (admin only).
-- **`/start_giveaway`**: 开始一个抽奖活动（仅限管理员）。 / Start a giveaway event (Admins only).
+minigame指令
+> fish - 開啓釣魚的悠閑時光
+>
+> fish_shop - 開啓釣魚商店(數據提供者"釣魚協會")
+>
+> fish_back - 開啓你的漁獲背包(數據提供者"釣魚協會")
+>
+> fish_rod - 開啓並可以切換你的魚竿(數據提供者"釣魚協會")
 
-### **用户和服务器信息 User and Server Info**
-- **`/server_info`**: 提供服务器信息。 / Provides information about the server.
-- **`/user_info`**: 提供用户信息。 / Provides information about a user.
+剩餘指令敬請期待...
 
-### **反馈 Feedback**
-- **`/feedback`**: 报告机器人的错误或问题。 / Report a bug or issue with the bot.
+## 製作機器人的初衷
+也許吧 可能就是爲了一些小群組吧 或者是爲了我自己
 
-## **即将推出的功能 Upcoming Features**
-*注意：RPG 地下城冒险功能仍在开发中，敬请期待。*
+### 如何聯絡我
+- Github
+  - [xuemeng1987](https://github.com/xuemeng1987)
+  - [Miya253](https://github.com/Miya253)
+- Discord
+  - [yuyuko bot test server](https://discord.gg/yGQQxvKHCn)
+- X
+  - [@yuemeng62](https://x.com/yuemeng200)
+- Instagram
+  - [Miya253](https://www.instagram.com/miya_2530_/)
 
-*Note: The RPG Dungeon Adventure feature is still in development and will be available soon.*
+## 未來預計計劃以及一些功能實現
 
-## **安装 Installation**
-
-1. 克隆仓库：/ Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/your-repo-name.git
-   ```
-2. 进入项目目录：/ Navigate to the project directory:
-   ```bash
-   cd your-repo-name
-   ```
-3. 安装所需依赖：/ Install the required dependencies:
-   ```bash
-   pip install
-   ```
-4. 在根目录下创建一个 .env 文件并添加你的机器人 token：/ Create a .env file in the root directory and add your bot token:
-   ```env
-   BOT_TOKEN=your-bot-token-here
-   ```
-5. 运行机器人：/ Run the bot:
-   ```bash
-   python bot.py
-   ```
-
-## **注意 Note**
-部分代码中涉及机器人关闭时的硬编码 **`AUTHOR_ID`**，可以在 **`.env`** 文件中设置您的实际 **`Discord ID`**。示例如下：
-
-In some parts where the bot is shut down, there is a hardcoded **`AUTHOR_ID`**. You can set your actual **`Discord ID`** in the **`.env`** file. The setup would look like this:
-```env
-DISCORD_BOT_TOKEN=your_discord_bot_token
-AUTHOR_ID=your_discord_id
-```
-### **贡献 Contributing**
-欢迎任何贡献！请 fork 此仓库并创建 pull request 来提交您的更改。如果是重大更改，请先打开一个 issue 以讨论您想要更改的内容。
-
-Feel free to contribute to this project! Please fork the repository and create a pull request with your changes. For major changes, please open an issue first to discuss what you would like to change.
-
-## **邀请机器人 Invite The Bot**
-[yuyukobot](https://discord.com/oauth2/authorize?client_id=852046004550238258&permissions=15&scope=bot)
-
-## **联系 Contact**
-如果您有任何问题或需要帮助，可以通过以下方式联系我：
-
-If you have any questions or need assistance, you can contact me through:
-
-- Discord: Miya253
-- X: [@yuemeng62](https://x.com/yuemeng200)
-- GitHub: [xuemeng1987](https://github.com/xuemeng1987)
-
-## **禁止抄袭声明 Anti-Plagiarism Notice**
-任何未经授权的代码抄袭、盗用或使用此开源代码的行为都将面临法律行动。
-
-Any unauthorized plagiarism, misappropriation, or misuse of this open-source code will result in legal action.
-
-# Project Zero Future Development Goals / 项目Zero未来发展目标
-
-## 1. Calendar Module / 日历模块
+### 1. Calendar Module / 日历模块
 - **Description / 描述**: Implement a comprehensive calendar module that allows users to set up reminders for events.
   实现一个全面的日历模块，允许用户设置事件提醒。
 - **Features / 功能**:
@@ -104,7 +106,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     与现有功能集成（如经济系统或RPG事件）。
 - **Status / 状态**: Deprecated / 已廢棄。
 
-## 2. Math Operation Expansion / 数学运算扩展
+### 2. Math Operation Expansion / 数学运算扩展
 - **Description / 描述**: Enhance the calculator functionality with more operations and debugging.
   增强计算器功能，加入更多运算和调试。
 - **Features / 功能**:
@@ -114,7 +116,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     改进错误处理与输入验证。
 - **Status / 状态**: In progress (testing on test-main.py) / 进行中（测试中，文件：test-main.py）。
 
-## 3. Language Support and Switching / 多语言支持与切换
+### 3. Language Support and Switching / 多语言支持与切换
 - **Description / 描述**: Add multilingual support for the bot.
   为机器人添加多语言支持。
 - **Features / 功能**:
@@ -124,7 +126,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     使用指令`/language`切换支持的语言。
 - **Status / 状态**: Planned / 计划中。
 
-## 4. Security and Automation / 安全与自动化
+### 4. Security and Automation / 安全与自动化
 - **Description / 描述**: Improve bot security and add automation features.
   改进机器人的安全性并加入自动化功能。
 - **Features / 功能**:
@@ -134,7 +136,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     自动管理或消息处理。
 - **Status / 状态**: Deprecated / 已廢棄。
 
-## 5. Economy System Leaderboard and Stats Display / 经济系统排行榜和统计显示
+### 5. Economy System Leaderboard and Stats Display / 经济系统排行榜和统计显示
 - **Description / 描述**: Introduce a leaderboard for economy-based interactions and stats display.
   引入经济系统互动的排行榜及统计数据显示。
 - **Features / 功能**:
@@ -144,7 +146,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     用户详细统计（工作、余额等）。
 - **Status / 状态**: accomplish / 已完成
 
-## 6. RPG Mini-Game Debugging / RPG小游戏调试
+### 6. RPG Mini-Game Debugging / RPG小游戏调试
 - **Description / 描述**: Continue debugging and improving the RPG mini-game for entertainment purposes.
   继续调试和改进RPG小游戏，提升娱乐性。
 - **Features / 功能**:
@@ -154,7 +156,7 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
     道具、技能与进度机制。
 - **Status / 状态**: In progress (debugging) / 进行中（调试中）。
 
-## 7. Automation: Moving Towards Auto Bot / 自动化：向自动机器人发展
+### 7. Automation: Moving Towards Auto Bot / 自动化：向自动机器人发展
 - **Description / 描述**: Gradually shift more features towards automated operations.
   逐步将更多功能转向自动化操作。
 - **Features / 功能**:
@@ -163,3 +165,13 @@ Any unauthorized plagiarism, misappropriation, or misuse of this open-source cod
   - Tag the bot as "Auto Bot."
     将机器人标记为“自动机器人”。
 - **Status / 状态**: Long-term goal / 长期目标。
+
+## 一些對抄襲仔的警告
+
+### **禁止抄袭声明 Anti-Plagiarism Notice**
+任何未经授权的代码抄袭、盗用或使用此开源代码的行为都将面临法律行动。
+
+### 任何未经授权的代码抄袭盗用 或使用此开源代码的行为都将面临法律行动
+- 行動方式如下
+  - [第36條](http://www.commonlii.org/my/legis/consol_act/ca1987133/s36.html)
+  - [第42條](https://www.myipo.gov.my/ms/copyright-act-1987/)
